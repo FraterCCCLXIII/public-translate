@@ -3,7 +3,7 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import MicButton from "./MicButton";
-import { Sun, Moon, Settings, Eye, Info, Maximize, Icon, page } from "lucide-react";
+import { Sun, Moon, Settings, Eye, Info, Maximize, Page, Icon, page } from "lucide-react";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@radix-ui/react-dialog";
@@ -385,7 +385,7 @@ const TranscriptNavInner: React.FC<TranscriptNavProps> = ({
               onClick={() => setShowTranscript(true)}
               aria-label={t("view_full_transcript")}
             >
-              <Icon iconNode={page} size={20} /> {/* Proper Lucide page icon */}
+              <Page size={20} /> {/* Proper Lucide page icon */}
             </Button>
           </TooltipTrigger>
           <TooltipContent side="top" className="rounded-full px-3 py-1 text-xs font-medium bg-neutral-800 text-white shadow-pill">
