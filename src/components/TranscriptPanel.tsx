@@ -1,6 +1,8 @@
+
 import React, { useEffect, useRef, useState } from "react";
 import TranscriptPanelControls from "./TranscriptPanelControls";
 import { Slider } from "./ui/slider";
+import { Eye } from "lucide-react";
 
 const RTL_LANGS = new Set(["ar", "he", "fa", "ur"]);
 function isRTL(lang: string) {
@@ -19,7 +21,7 @@ interface TranscriptPanelProps {
   textSize?: number;
   setTextSize?: (value: number) => void;
   lang?: string;
-  showTimestamps?: boolean; // <--- NEW PROP
+  showTimestamps?: boolean;
   showAudioButton?: boolean;
   audioButtonProps?: {
     text: string;
@@ -36,6 +38,14 @@ interface TranscriptPanelProps {
     reverseOrder: boolean;
     setReverseOrder: (b: boolean) => void;
   };
+  /** NEW: Only show top area on hover after recording. */
+  isRecording?: boolean;
+  /** NEW: Style main content in large pill. */
+  pillStyle?: boolean;
+  /** NEW: Option to show/hide Eye toggle and control parent visibility. */
+  showVisibilityToggle?: boolean;
+  visible?: boolean;
+  setVisible?: (b: boolean) => void;
 }
 
 const TranscriptPanel: React.FC<TranscriptPanelProps> = ({
@@ -45,10 +55,15 @@ const TranscriptPanel: React.FC<TranscriptPanelProps> = ({
   textSize = 80,
   setTextSize,
   lang = "en",
-  showTimestamps = false, // <-- default to false, override in transcript modal
+  showTimestamps = false,
   showAudioButton,
   audioButtonProps,
   alignState,
+  isRecording,
+  pillStyle,
+  showVisibilityToggle,
+  visible,
+  setVisible,
 }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [displayedWords, setDisplayedWords] = useState<TranscriptWord[]>([]);
@@ -77,10 +92,8 @@ const TranscriptPanel: React.FC<TranscriptPanelProps> = ({
               ? text.split("").map(t => ({ text: t }))
               : text.trim().split(/\s+/).filter(Boolean).map(t => ({ text: t }))
           );
-    // If RTL, reverse for display only
     if (reverseOrder) curWords = curWords.slice().reverse();
 
-    // Previous text as string, just for animation
     let prevWords: string[] =
       /[\u4E00-\u9FFF\u3040-\u30FF]/.test(lang || "")
         ? prevTextRef.current.split("")
@@ -123,7 +136,6 @@ const TranscriptPanel: React.FC<TranscriptPanelProps> = ({
     setAudioLoading(true);
     audioButtonProps.setPlaying(true);
     audioButtonProps.onPlaybackStart?.();
-    // Use browser TTS API
     if ("speechSynthesis" in window) {
       const utter = new window.SpeechSynthesisUtterance(audioButtonProps.text);
       utter.lang = audioButtonProps.lang;
@@ -149,38 +161,56 @@ const TranscriptPanel: React.FC<TranscriptPanelProps> = ({
   // Defensive: ensure textSize is always a number (default fallback 80)
   const safeTextSize = typeof textSize === 'number' && !isNaN(textSize) ? textSize : 80;
 
+  // Header hover state for showing controls only on hover after recording
+  const [isHovered, setIsHovered] = useState(false);
+  const showHeader = !isRecording || isHovered;
+
+  // Pill wrapper classes
+  const pillClass = "rounded-full bg-gray-100 dark:bg-neutral-900 shadow-inner px-6 py-6 mx-2 flex items-center transition-all duration-200";
+
   return (
     <section
       className={`
-        flex flex-col h-full w-full px-8 pt-8 pb-6
+        flex flex-col h-full w-full relative
         ${currentAlign === "left" ? "items-start" : "items-end"}
-        relative
+        group
       `}
+      tabIndex={0}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
     >
-      {/* Per-panel text size slider at the top */}
-      {setTextSize && (
-        <div className="flex items-center gap-2 mb-2 w-full">
-          <span className="text-xs text-gray-500">A</span>
-          <Slider
-            min={32}
-            max={128}
-            step={1}
-            value={[safeTextSize]}
-            onValueChange={arr => {
-              // Defensive for if arr is undefined or empty
-              const val = Array.isArray(arr) && arr.length > 0 ? arr[0] : 80;
-              setTextSize(val);
-            }}
-            className="w-32"
-            aria-label="Font Size"
-          />
-          <span className="text-base font-bold text-gray-700" style={{ fontSize: '1.25em' }}>A</span>
-        </div>
-      )}
-      <div className="flex flex-row items-center w-full mb-1 justify-between">
+      {/* Column Header: language name, slider, icons, only visible on hover (if recording) */}
+      <div
+        className={`
+          w-full flex flex-row items-center mb-2 px-4 pt-4
+          ${showHeader ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}
+          transition-opacity duration-200
+        `}
+      >
+        {/* Language Name */}
         <h2 className="uppercase tracking-widest text-xs font-semibold text-gray-400 flex-1">
           {title}
         </h2>
+        {/* Slider in the middle */}
+        {setTextSize && (
+          <div className="flex items-center gap-2 mx-2">
+            <span className="text-xs text-gray-500">A</span>
+            <Slider
+              min={32}
+              max={128}
+              step={1}
+              value={[safeTextSize]}
+              onValueChange={arr => {
+                const val = Array.isArray(arr) && arr.length > 0 ? arr[0] : 80;
+                setTextSize(val);
+              }}
+              className="w-28"
+              aria-label="Font Size"
+            />
+            <span className="text-base font-bold text-gray-700" style={{ fontSize: '1.25em' }}>A</span>
+          </div>
+        )}
+        {/* Alignment & Audio Controls */}
         <TranscriptPanelControls
           align={currentAlign}
           onToggleAlign={handleAlignToggle}
@@ -190,78 +220,89 @@ const TranscriptPanel: React.FC<TranscriptPanelProps> = ({
           audioLoading={audioLoading}
         />
       </div>
-      <div
-        ref={scrollRef}
-        className={`
-          flex-1 w-full bg-white dark:bg-background text-black dark:text-white
-          rounded
-          overflow-y-auto
-          scrollbar-thin
-          transition-colors
-          min-h-[3em]
-          max-h-[100vh]
-        `}
-        style={{
-          minHeight: "3em",
-          height: "calc(100vh - 120px)",
-        }}
-      >
-        <span
+      {/* Pill container for transcript/translation and eye toggle */}
+      <div className={pillStyle ? pillClass : ""} style={{width:"100%", minHeight:"5em"}}>
+        <div
+          ref={scrollRef}
           className={`
-            block
-            ${currentAlign === "left" ? "text-left" : "text-right"}
-            font-black leading-tight p-2
-            opacity-100
-            transition-opacity
-            ${displayedWords.length === 0 ? "text-gray-300" : ""}
+            flex-1 w-full bg-transparent text-black dark:text-white
+            overflow-y-auto
+            scrollbar-thin
+            transition-colors
+            min-h-[3em]
+            max-h-[100vh]
+            flex items-center
           `}
           style={{
-            fontSize: safeTextSize + "px",
-            wordBreak: "break-word",
-            lineHeight: 1.14,
-            minHeight: "2em"
+            minHeight: "3em",
+            height: "auto",
+            fontSize: safeTextSize,
           }}
         >
-          {displayedWords.length === 0 ? (
-            <span className="text-gray-300">...</span>
-          ) : (
-            displayedWords.map((wordObj, i) => (
-              <span
-                key={i + ":" + wordObj.text}
-                className={`inline-block align-top relative
-                  ${animatingWordIndexes.includes(i) ? "fade-in-word" : ""}
-                `}
-                style={{
-                  opacity: animatingWordIndexes.includes(i) ? 0 : 1,
-                  animation: animatingWordIndexes.includes(i)
-                    ? "fade-in-opacity 1.2s forwards"
-                    : undefined,
-                  marginRight:
-                    (!reverseOrder && lang === "en") ? "0.25em"
-                      : (reverseOrder && lang === "en") ? "0.25em"
+          <span
+            className={`
+              block w-full
+              ${currentAlign === "left" ? "text-left" : "text-right"}
+              font-black leading-tight
+              opacity-100
+              transition-opacity
+              ${displayedWords.length === 0 ? "text-gray-300" : ""}
+            `}
+            style={{
+              fontSize: safeTextSize + "px",
+              wordBreak: "break-word",
+              lineHeight: 1.14,
+              minHeight: "2em",
+              fontWeight: 700
+            }}
+          >
+            {displayedWords.length === 0 ? (
+              <span className="text-gray-300">...</span>
+            ) : (
+              displayedWords.map((wordObj, i) => (
+                <span
+                  key={i + ":" + wordObj.text}
+                  className={`inline-block align-top relative
+                    ${animatingWordIndexes.includes(i) ? "fade-in-word" : ""}
+                  `}
+                  style={{
+                    opacity: animatingWordIndexes.includes(i) ? 0 : 1,
+                    animation: animatingWordIndexes.includes(i)
+                      ? "fade-in-opacity 1.2s forwards"
                       : undefined,
-                  fontWeight: "inherit"
-                }}
-              >
-                {showTimestamps && wordObj.timestamp && (
-                  <span
-                    className="absolute left-0 top-[-1.2em] text-xs text-gray-400 font-normal"
-                    style={{ fontSize: "0.38em", position: "absolute" }}
-                  >
-                    {wordObj.timestamp}
-                  </span>
-                )}
-                {wordObj.text}
-                {(!reverseOrder && lang === "en" && i !== displayedWords.length - 1) ? " " : ""}
-              </span>
-            ))
-          )}
-        </span>
+                    marginRight:
+                      (!reverseOrder && lang === "en") ? "0.25em"
+                        : (reverseOrder && lang === "en") ? "0.25em"
+                        : undefined,
+                    fontWeight: "inherit"
+                  }}
+                >
+                  {/* No timestamps in the main view */}
+                  {wordObj.text}
+                  {(!reverseOrder && lang === "en" && i !== displayedWords.length - 1) ? " " : ""}
+                </span>
+              ))
+            )}
+          </span>
+        </div>
+        {/* Eye toggle (show/hide) icon in pill, aligned right */}
+        {showVisibilityToggle && typeof visible !== "undefined" && typeof setVisible === "function" && (
+          <button
+            aria-label="Toggle visibility"
+            className="ml-4 p-2 rounded-full hover:bg-accent transition-colors flex-shrink-0"
+            onClick={() => setVisible(!visible)}
+            tabIndex={0}
+            type="button"
+            style={{alignSelf:"center"}}
+          >
+            <Eye size={22} className={visible ? "opacity-100" : "opacity-30"} />
+          </button>
+        )}
         <style>{`
-            @keyframes fade-in-opacity {
-              0% { opacity: 0;}
-              100% { opacity: 1;}
-            }
+          @keyframes fade-in-opacity {
+            0% { opacity: 0;}
+            100% { opacity: 1;}
+          }
         `}</style>
       </div>
     </section>
@@ -269,3 +310,4 @@ const TranscriptPanel: React.FC<TranscriptPanelProps> = ({
 };
 
 export default TranscriptPanel;
+

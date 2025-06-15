@@ -69,6 +69,10 @@ const Index = () => {
   const leftLabel = LANGUAGES.find(l => l.value === leftLang)?.label || leftLang;
   const rightLabel = LANGUAGES.find(l => l.value === rightLang)?.label || rightLang;
 
+  // Create text for transcript and translation
+  const transcriptText = transcriptData.map(t => t.text).join(" ");
+  const translationText = translationData.map(t => t.text).join(" ");
+
   return (
     <>
       {/* NUX overlays UI, but bottom controls are always visible */}
@@ -93,8 +97,8 @@ const Index = () => {
           rightVisible={rightVisible}
           setLeftVisible={setLeftVisible}
           setRightVisible={setRightVisible}
-          transcript={transcriptData}
-          translation={translationData}
+          transcript={transcriptText}
+          translation={translationText}
         />
         {/* Render transcript panels as main content */}
         <div className="flex flex-row gap-4 w-full max-w-6xl mx-auto mt-6">
@@ -108,6 +112,11 @@ const Index = () => {
                 setTextSize={setLeftTextSize}
                 lang={leftLang}
                 showTimestamps={false}
+                showVisibilityToggle
+                isRecording={recording}
+                pillStyle={true}
+                visible={leftVisible}
+                setVisible={setLeftVisible}
               />
             </div>
           )}
@@ -121,6 +130,11 @@ const Index = () => {
                 setTextSize={setRightTextSize}
                 lang={rightLang}
                 showTimestamps={false}
+                showVisibilityToggle
+                isRecording={recording}
+                pillStyle={true}
+                visible={rightVisible}
+                setVisible={setRightVisible}
               />
             </div>
           )}
