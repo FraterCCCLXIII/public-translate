@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import TranscriptNav from "@/components/TranscriptNav";
 import NUX from "@/components/NUX";
@@ -16,6 +15,16 @@ const translationData = [
   { text: "こんにちは", timestamp: "00:00:01" },
   { text: "世界！", timestamp: "00:00:02" },
   { text: "元気ですか？", timestamp: "00:00:04" },
+];
+
+// Language metadata
+const LANGUAGES = [
+  { value: "en", label: "English" },
+  { value: "ja", label: "Japanese" },
+  { value: "fr", label: "French" },
+  { value: "de", label: "German" },
+  { value: "es", label: "Spanish" },
+  { value: "zh", label: "Chinese" }
 ];
 
 const Index = () => {
@@ -56,6 +65,10 @@ const Index = () => {
     setRecording((r) => !r);
   };
 
+  // Helpers to get language labels
+  const leftLabel = LANGUAGES.find(l => l.value === leftLang)?.label || leftLang;
+  const rightLabel = LANGUAGES.find(l => l.value === rightLang)?.label || rightLang;
+
   return (
     <>
       {/* NUX overlays UI, but bottom controls are always visible */}
@@ -80,32 +93,34 @@ const Index = () => {
           rightVisible={rightVisible}
           setLeftVisible={setLeftVisible}
           setRightVisible={setRightVisible}
-          transcript={""}
-          translation={""}
+          transcript={transcriptData}
+          translation={translationData}
         />
         {/* Render transcript panels as main content */}
         <div className="flex flex-row gap-4 w-full max-w-6xl mx-auto mt-6">
           {leftVisible && (
             <div className="flex-1 min-w-0">
               <TranscriptPanel
-                title="Transcript"
+                title={leftLabel}
                 text={transcriptData}
                 align="left"
                 textSize={leftTextSize}
                 setTextSize={setLeftTextSize}
                 lang={leftLang}
+                showTimestamps={false}
               />
             </div>
           )}
           {rightVisible && (
             <div className="flex-1 min-w-0">
               <TranscriptPanel
-                title="Translation"
+                title={rightLabel}
                 text={translationData}
                 align="right"
                 textSize={rightTextSize}
                 setTextSize={setRightTextSize}
                 lang={rightLang}
+                showTimestamps={false}
               />
             </div>
           )}
@@ -116,4 +131,3 @@ const Index = () => {
 };
 
 export default Index;
-

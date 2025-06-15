@@ -19,6 +19,7 @@ interface TranscriptPanelProps {
   textSize?: number;
   setTextSize?: (value: number) => void;
   lang?: string;
+  showTimestamps?: boolean; // <--- NEW PROP
   showAudioButton?: boolean;
   audioButtonProps?: {
     text: string;
@@ -44,6 +45,7 @@ const TranscriptPanel: React.FC<TranscriptPanelProps> = ({
   textSize = 80,
   setTextSize,
   lang = "en",
+  showTimestamps = false, // <-- default to false, override in transcript modal
   showAudioButton,
   audioButtonProps,
   alignState,
@@ -176,7 +178,9 @@ const TranscriptPanel: React.FC<TranscriptPanelProps> = ({
         </div>
       )}
       <div className="flex flex-row items-center w-full mb-1 justify-between">
-        <h2 className="uppercase tracking-widest text-xs font-semibold text-gray-400 flex-1">{title}</h2>
+        <h2 className="uppercase tracking-widest text-xs font-semibold text-gray-400 flex-1">
+          {title}
+        </h2>
         <TranscriptPanelControls
           align={currentAlign}
           onToggleAlign={handleAlignToggle}
@@ -236,12 +240,15 @@ const TranscriptPanel: React.FC<TranscriptPanelProps> = ({
                     (!reverseOrder && lang === "en") ? "0.25em"
                       : (reverseOrder && lang === "en") ? "0.25em"
                       : undefined,
+                  fontWeight: "inherit"
                 }}
               >
-                {/* Render timestamp if present */}
-                {wordObj.timestamp && (
-                  <span className="absolute left-0 top-[-1.2em] text-xs text-gray-400" style={{ fontSize: "0.38em" }}>
-                    [{wordObj.timestamp}]
+                {showTimestamps && wordObj.timestamp && (
+                  <span
+                    className="absolute left-0 top-[-1.2em] text-xs text-gray-400 font-normal"
+                    style={{ fontSize: "0.38em", position: "absolute" }}
+                  >
+                    {wordObj.timestamp}
                   </span>
                 )}
                 {wordObj.text}

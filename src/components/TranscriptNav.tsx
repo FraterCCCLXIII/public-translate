@@ -3,7 +3,7 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import MicButton from "./MicButton";
-import { Sun, Moon, Settings, Eye, Info, Maximize, FileText, Icon, page } from "lucide-react";
+import { Sun, Moon, Settings, Eye, Info, Maximize, FileText } from "lucide-react";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@radix-ui/react-dialog";
@@ -236,6 +236,9 @@ const TranscriptNavInner: React.FC<TranscriptNavProps> = ({
   // Add i18n translation hook:
   const { t, locale, setLocale } = useI18n();
 
+  const leftLabel = LANGUAGES.find(l => l.value === leftLang)?.label || leftLang;
+  const rightLabel = LANGUAGES.find(l => l.value === rightLang)?.label || rightLang;
+
   //
 
   return (
@@ -253,12 +256,29 @@ const TranscriptNavInner: React.FC<TranscriptNavProps> = ({
               </div>
               <div className="flex flex-col md:flex-row gap-4 h-full overflow-auto">
                 <div className="flex-1 flex flex-col min-w-0">
-                  <h4 className="font-semibold text-xs mb-1">{LANGUAGES.find(l => l.value===leftLang)?.label || leftLang}</h4>
-                  <div className="bg-gray-100 dark:bg-gray-800 p-2 rounded mb-2 max-h-full flex-1 overflow-y-auto text-xs">{transcript}</div>
+                  <h4 className="font-semibold text-xs mb-1">{leftLabel}</h4>
+                  {/* TranscriptPanel for modal view with timestamps */}
+                  {/* @ts-ignore - Panel expects text prop type from parent */}
+                  <TranscriptPanel
+                    title={leftLabel}
+                    text={transcript}
+                    align="left"
+                    textSize={40}
+                    lang={leftLang}
+                    showTimestamps={true}
+                  />
                 </div>
                 <div className="flex-1 flex flex-col min-w-0">
-                  <h4 className="font-semibold text-xs mb-1">{LANGUAGES.find(l => l.value===rightLang)?.label || rightLang}</h4>
-                  <div className="bg-gray-100 dark:bg-gray-800 p-2 rounded mb-2 max-h-full flex-1 overflow-y-auto text-xs">{translation}</div>
+                  <h4 className="font-semibold text-xs mb-1">{rightLabel}</h4>
+                  {/* @ts-ignore - Panel expects text prop type from parent */}
+                  <TranscriptPanel
+                    title={rightLabel}
+                    text={translation}
+                    align="right"
+                    textSize={40}
+                    lang={rightLang}
+                    showTimestamps={true}
+                  />
                 </div>
               </div>
               <Button onClick={handleDownload} className="w-full mt-2" variant="default">Download</Button>
@@ -376,16 +396,17 @@ const TranscriptNavInner: React.FC<TranscriptNavProps> = ({
           </TooltipContent>
         </Tooltip>
         
-        {/* Transcript Button with tooltip */}
+        {/* Transcript Button as Icon */}
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
-              variant="outline"
+              variant="ghost"
+              size="icon"
               className="ml-2"
               onClick={() => setShowTranscript(true)}
               aria-label={t("view_full_transcript")}
             >
-              <FileText size={20} /> {/* Proper Lucide page icon */}
+              <FileText size={20} />
             </Button>
           </TooltipTrigger>
           <TooltipContent side="top" className="rounded-full px-3 py-1 text-xs font-medium bg-neutral-800 text-white shadow-pill">
