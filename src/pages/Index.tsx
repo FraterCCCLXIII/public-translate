@@ -1,9 +1,8 @@
-
 import React, { useState, useRef } from "react";
 import TranscriptPanel from "@/components/TranscriptPanel";
 import MicButton from "@/components/MicButton";
 import TranscriptNav from "@/components/TranscriptNav";
-import { useVoiceRecognition } from "@/lib/voice";
+import { useVoiceRecognition } from "@/hooks/useVoiceRecognition";
 import {
   ResizablePanelGroup,
   ResizablePanel,
@@ -248,4 +247,3 @@ const Index: React.FC = () => {
 };
 
 export default Index;
-
