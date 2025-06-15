@@ -10,6 +10,8 @@ import { Dialog } from "@radix-ui/react-dialog";
 import { saveAs } from "file-saver";
 import AboutModal from "./AboutModal";
 import { useTranslation } from "@/hooks/useTranslation";
+import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
+import { I18nProvider, useI18n } from "@/hooks/useUITitleTranslation";
 
 // Dummy translation XML replacement
 const t = (key: string, defaultVal: string) => defaultVal; // Replace with real t() function
@@ -102,7 +104,7 @@ interface TranscriptNavProps {
   setNavVisible?: (b: boolean) => void;
 }
 
-const TranscriptNav: React.FC<TranscriptNavProps> = ({
+const TranscriptNavInner: React.FC<TranscriptNavProps> = ({
   className = "",
   recording,
   onMicClick,
@@ -231,6 +233,11 @@ const TranscriptNav: React.FC<TranscriptNavProps> = ({
     // TODO: wire in setI18nLanguage(uiLanguage) or similar as needed
   }, [uiLanguage]);
 
+  // Add i18n translation hook:
+  const { t, locale, setLocale } = useI18n();
+
+  //
+
   return (
     <>
       {/* About Modal */}
@@ -259,6 +266,7 @@ const TranscriptNav: React.FC<TranscriptNavProps> = ({
           </div>
         </Dialog>
       )}
+      <TooltipProvider>
       <nav
         ref={navRef}
         className={`
@@ -284,28 +292,28 @@ const TranscriptNav: React.FC<TranscriptNavProps> = ({
         }}
         onMouseEnter={handleMouseEnter}
       >
-        {/* Mic button with label popover */}
-        <Popover>
-          <PopoverTrigger asChild>
+        {/* Mic button with tooltip */}
+        <Tooltip>
+          <TooltipTrigger asChild>
             <div>
               <MicButton
                 recording={recording}
                 onClick={onMicClick}
-                aria-label={t("mic_button", "Start or stop recording")}
+                aria-label={t("mic_button")}
               />
             </div>
-          </PopoverTrigger>
-          <PopoverContent className="w-40 text-sm">
-            <span>{t("mic_button_label", "Start or stop recording")}</span>
-          </PopoverContent>
-        </Popover>
+          </TooltipTrigger>
+          <TooltipContent side="top" className="rounded-full px-3 py-1 text-xs font-medium bg-neutral-800 text-white shadow-pill">
+            {t("mic_button_label")}
+          </TooltipContent>
+        </Tooltip>
 
-        {/* Left Language Select with label popover */}
-        <Popover>
-          <PopoverTrigger asChild>
+        {/* Left Language Select with tooltip */}
+        <Tooltip>
+          <TooltipTrigger asChild>
             <div className="relative flex items-center w-28">
               <Select value={leftLang} onValueChange={setLeftLang}>
-                <SelectTrigger className="w-28" aria-label={t("from_language", "From language")}>
+                <SelectTrigger className="w-28" aria-label={t("from_language")}>
                   <SelectValue aria-label="From language">
                     {LANGUAGES.find(l=>l.value===leftLang)?.label || leftLang}
                   </SelectValue>
@@ -319,7 +327,7 @@ const TranscriptNav: React.FC<TranscriptNavProps> = ({
               <Button
                 variant="ghost"
                 size="icon"
-                aria-label={t("hide_left_panel", "Show or hide left panel")}
+                aria-label={t("hide_left_panel")}
                 className="ml-1"
                 onClick={() => setLeftVisible(!leftVisible)}
                 tabIndex={-1}
@@ -327,18 +335,20 @@ const TranscriptNav: React.FC<TranscriptNavProps> = ({
                 <Eye size={18} className={`${leftVisible ? "opacity-100" : "opacity-30"}`} />
               </Button>
             </div>
-          </PopoverTrigger>
-          <PopoverContent className="w-48">
-            <span>{t("from_language_help", "Primary recording/input language")}</span>
-          </PopoverContent>
-        </Popover>
+          </TooltipTrigger>
+          <TooltipContent side="top" className="rounded-full px-3 py-1 text-xs font-medium bg-neutral-800 text-white shadow-pill">
+            {t("from_language_help")}
+          </TooltipContent>
+        </Tooltip>
+
         <span className="text-xs text-gray-400">→</span>
-        {/* Right Language Select with label popover */}
-        <Popover>
-          <PopoverTrigger asChild>
+
+        {/* Right Language Select with tooltip */}
+        <Tooltip>
+          <TooltipTrigger asChild>
             <div className="relative flex items-center w-28">
               <Select value={rightLang} onValueChange={setRightLang}>
-                <SelectTrigger className="w-28" aria-label={t("to_language", "To language")}>
+                <SelectTrigger className="w-28" aria-label={t("to_language")}>
                   <SelectValue aria-label="To language">
                     {LANGUAGES.find(l=>l.value===rightLang)?.label || rightLang}
                   </SelectValue>
@@ -352,7 +362,7 @@ const TranscriptNav: React.FC<TranscriptNavProps> = ({
               <Button
                 variant="ghost"
                 size="icon"
-                aria-label={t("hide_right_panel", "Show or hide right panel")}
+                aria-label={t("hide_right_panel")}
                 className="ml-1"
                 onClick={() => setRightVisible(!rightVisible)}
                 tabIndex={-1}
@@ -360,20 +370,18 @@ const TranscriptNav: React.FC<TranscriptNavProps> = ({
                 <Eye size={18} className={`${rightVisible ? "opacity-100" : "opacity-30"}`} />
               </Button>
             </div>
-          </PopoverTrigger>
-          <PopoverContent className="w-48">
-            <span>{t("to_language_help", "Translation/output language")}</span>
-          </PopoverContent>
-        </Popover>
+          </TooltipTrigger>
+          <TooltipContent side="top" className="rounded-full px-3 py-1 text-xs font-medium bg-neutral-800 text-white shadow-pill">
+            {t("to_language_help")}
+          </TooltipContent>
+        </Tooltip>
         
-        {/* Font size with label popover */}
-        <Popover open={showFontSize} onOpenChange={setShowFontSize}>
-          <PopoverTrigger asChild>
+        {/* Font size with tooltip */}
+        <Tooltip>
+          <TooltipTrigger asChild>
             <div
               className="flex items-center gap-2 ml-2 cursor-pointer select-none"
-              aria-label={t("font_size", "Text font size")}
-              onMouseEnter={() => setShowFontSize(true)}
-              onMouseLeave={() => setShowFontSize(false)}
+              aria-label={t("font_size")}
             >
               <span className="text-xs text-gray-500">A</span>
               <Slider
@@ -383,51 +391,50 @@ const TranscriptNav: React.FC<TranscriptNavProps> = ({
                 value={[textSize]}
                 onValueChange={([value]) => setTextSize(value)}
                 className="w-32"
-                aria-label={t("font_size_slider", "Text Size slider")}
+                aria-label={t("font_size_slider")}
               />
               <span className="text-base font-bold text-gray-700" style={{ fontSize: '1.25em' }}>A</span>
             </div>
-          </PopoverTrigger>
-          <PopoverContent className="w-32 flex flex-col items-center">
-            <span className="font-mono text-lg">{textSize}px</span>
-            <span className="text-xs mt-1">{t("font_size_help", "Adjust the display text size")}</span>
-          </PopoverContent>
-        </Popover>
+          </TooltipTrigger>
+          <TooltipContent side="top" className="rounded-full px-3 py-1 text-xs font-medium bg-neutral-800 text-white shadow-pill">
+            {t("font_size_help")}
+          </TooltipContent>
+        </Tooltip>
 
-        {/* Theme Switch with label popover */}
-        <Popover>
-          <PopoverTrigger asChild>
-            <div className="flex items-center gap-1 ml-2" aria-label={t("theme_toggle", "Theme toggle")}>
+        {/* Theme Switch with tooltip */}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className="flex items-center gap-1 ml-2" aria-label={t("theme_toggle")}>
               <Sun size={18} />
               <Switch
                 checked={darkMode}
                 onCheckedChange={() => setDarkMode((v) => !v)}
-                aria-label={t("toggle_dark_mode", "Toggle dark mode")}
+                aria-label={t("toggle_dark_mode")}
               />
               <Moon size={18} />
             </div>
-          </PopoverTrigger>
-          <PopoverContent className="w-48">
-            <span>{t("theme_toggle_help", "Switch between light and dark mode")}</span>
-          </PopoverContent>
-        </Popover>
+          </TooltipTrigger>
+          <TooltipContent side="top" className="rounded-full px-3 py-1 text-xs font-medium bg-neutral-800 text-white shadow-pill">
+            {t("theme_toggle_help")}
+          </TooltipContent>
+        </Tooltip>
 
-        {/* Transcript Button with label popover */}
-        <Popover>
-          <PopoverTrigger asChild>
+        {/* Transcript Button with tooltip */}
+        <Tooltip>
+          <TooltipTrigger asChild>
             <Button
               variant="outline"
               className="ml-2"
               onClick={() => setShowTranscript(true)}
-              aria-label={t("view_full_transcript", "View full transcript")}
+              aria-label={t("view_full_transcript")}
             >
-              {t("transcript", "Transcript")}
+              {t("transcript")}
             </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-48">
-            <span>{t("transcript_help", "Open and download the full transcript history")}</span>
-          </PopoverContent>
-        </Popover>
+          </TooltipTrigger>
+          <TooltipContent side="top" className="rounded-full px-3 py-1 text-xs font-medium bg-neutral-800 text-white shadow-pill">
+            {t("transcript_help")}
+          </TooltipContent>
+        </Tooltip>
 
         {/* Settings icon with popover and language dropdown */}
         <Popover open={settingsOpen} onOpenChange={setSettingsOpen}>
@@ -436,7 +443,7 @@ const TranscriptNav: React.FC<TranscriptNavProps> = ({
               size="icon"
               variant="ghost"
               className="ml-2"
-              aria-label={t("settings", "Settings")}
+              aria-label={t("settings")}
             >
               <Settings size={22} />
             </Button>
@@ -444,7 +451,7 @@ const TranscriptNav: React.FC<TranscriptNavProps> = ({
           <PopoverContent className="w-96 max-w-[96vw]">
             <div className="flex flex-col gap-4">
               <div>
-                <label className="font-bold text-xs text-gray-700">AI Model Provider</label>
+                <label className="font-bold text-xs text-gray-700">{t("llm_provider")}</label>
                 <select
                   value={llmProvider}
                   className="w-full mt-1 border rounded px-2 py-1 bg-background"
@@ -463,7 +470,7 @@ const TranscriptNav: React.FC<TranscriptNavProps> = ({
               {/* Show fields depending on provider */}
               {llmProvider === "openai" && (
                 <div>
-                  <label className="font-bold text-xs text-gray-700">OpenAI API key</label>
+                  <label className="font-bold text-xs text-gray-700">{t("openai_api_key")}</label>
                   <input
                     className="w-full mt-1 border rounded px-2 py-1 bg-background"
                     value={openaiKey}
@@ -475,7 +482,7 @@ const TranscriptNav: React.FC<TranscriptNavProps> = ({
               )}
               {llmProvider === "claude" && (
                 <div>
-                  <label className="font-bold text-xs text-gray-700">Claude API key</label>
+                  <label className="font-bold text-xs text-gray-700">{t("claude_api_key")}</label>
                   <input
                     className="w-full mt-1 border rounded px-2 py-1 bg-background"
                     value={claudeKey}
@@ -487,7 +494,7 @@ const TranscriptNav: React.FC<TranscriptNavProps> = ({
               )}
               {llmProvider === "deepseek" && (
                 <div>
-                  <label className="font-bold text-xs text-gray-700">Deepseek API key</label>
+                  <label className="font-bold text-xs text-gray-700">{t("deepseek_api_key")}</label>
                   <input
                     className="w-full mt-1 border rounded px-2 py-1 bg-background"
                     value={deepseekKey}
@@ -499,7 +506,7 @@ const TranscriptNav: React.FC<TranscriptNavProps> = ({
               )}
               {llmProvider === "localllm" && (
                 <div>
-                  <label className="font-bold text-xs text-gray-700">Local LLM URL</label>
+                  <label className="font-bold text-xs text-gray-700">{t("local_llm_url")}</label>
                   <input
                     className="w-full mt-1 border rounded px-2 py-1 bg-background"
                     value={localLlmUrl}
@@ -512,7 +519,7 @@ const TranscriptNav: React.FC<TranscriptNavProps> = ({
               {/* Additional Google API key field if necessary */}
               {(llmProvider === "googletranslate") && (
                 <div>
-                  <label className="font-bold text-xs text-gray-700">Proxy URL / Key (if needed)</label>
+                  <label className="font-bold text-xs text-gray-700">{t("proxy_url")}</label>
                   <input
                     className="w-full mt-1 border rounded px-2 py-1 bg-background"
                     value={googleKey}
@@ -524,7 +531,7 @@ const TranscriptNav: React.FC<TranscriptNavProps> = ({
               )}
               {/* TTS Provider and voice dropdown */}
               <div>
-                <label className="font-bold text-xs text-gray-700">TTS Provider</label>
+                <label className="font-bold text-xs text-gray-700">{t("tts_provider")}</label>
                 <select
                   value={ttslib}
                   className="w-full mt-1 border rounded px-2 py-1 bg-background"
@@ -545,7 +552,7 @@ const TranscriptNav: React.FC<TranscriptNavProps> = ({
               {(ttslib && ttslib !== "") && (
                 <>
                   <div>
-                    <label className="font-bold text-xs text-gray-700">TTS API key</label>
+                    <label className="font-bold text-xs text-gray-700">{t("tts_api_key")}</label>
                     <input
                       className="w-full mt-1 border rounded px-2 py-1 bg-background"
                       value={ttsKey}
@@ -555,7 +562,7 @@ const TranscriptNav: React.FC<TranscriptNavProps> = ({
                     />
                   </div>
                   <div>
-                    <label className="font-bold text-xs text-gray-700">Voice</label>
+                    <label className="font-bold text-xs text-gray-700">{t("tts_voice")}</label>
                     <select
                       value={ttsVoice}
                       className="w-full mt-1 border rounded px-2 py-1 bg-background"
@@ -570,63 +577,71 @@ const TranscriptNav: React.FC<TranscriptNavProps> = ({
                   </div>
                 </>
               )}
-              <Button onClick={saveSettings} className="w-full" variant="default">Save</Button>
-              {/* Language selection at bottom */}
+              {/* UI Language dropdown */}
               <div>
-                <label className="font-bold text-xs text-gray-700">{t("ui_language", "UI Language")}</label>
+                <label className="font-bold text-xs text-gray-700">{t("ui_language")}</label>
                 <select
-                  value={uiLanguage}
+                  value={locale}
                   className="w-full mt-1 border rounded px-2 py-1 bg-background"
-                  onChange={e => setUiLanguage(e.target.value)}
+                  onChange={e => setLocale(e.target.value as any)}
                 >
-                  {UI_LANGUAGES.map(o => (
-                    <option key={o.value} value={o.value}>{o.label}</option>
-                  ))}
+                  <option value="en">English</option>
+                  <option value="fr">Français</option>
                 </select>
-                <span className="text-xs text-gray-400">{t("ui_language_help", "Sets the user interface language")}</span>
+                <span className="text-xs text-gray-400">{t("ui_language_help")}</span>
               </div>
+              {/* Move Save button to end */}
+              <Button onClick={saveSettings} className="w-full" variant="default">{t("save")}</Button>
             </div>
           </PopoverContent>
         </Popover>
 
-        {/* Info icon with label popover */}
-        <Popover>
-          <PopoverTrigger asChild>
+        {/* Info icon with tooltip */}
+        <Tooltip>
+          <TooltipTrigger asChild>
             <Button
               variant="ghost"
               size="icon"
               className="ml-1"
-              aria-label={t("about_app", "About this app")}
+              aria-label={t("about_app")}
               onClick={() => setAboutOpen(true)}
             >
               <Info size={22} />
             </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-40">
-            <span>{t("about_help", "Learn about this app and credits")}</span>
-          </PopoverContent>
-        </Popover>
+          </TooltipTrigger>
+          <TooltipContent side="top" className="rounded-full px-3 py-1 text-xs font-medium bg-neutral-800 text-white shadow-pill">
+            {t("about_help")}
+          </TooltipContent>
+        </Tooltip>
 
-        {/* Maximize/fullscreen with popover */}
-        <Popover>
-          <PopoverTrigger asChild>
+        {/* Maximize/fullscreen with tooltip */}
+        <Tooltip>
+          <TooltipTrigger asChild>
             <Button
               variant="ghost"
               size="icon"
               className="ml-2"
-              aria-label={t("fullscreen", "Fullscreen")}
+              aria-label={t("fullscreen")}
               onClick={handleMaximize}
             >
               <Maximize size={22} />
             </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-40">
-            <span>{t("fullscreen_help", "Toggle fullscreen mode")}</span>
-          </PopoverContent>
-        </Popover>
+          </TooltipTrigger>
+          <TooltipContent side="top" className="rounded-full px-3 py-1 text-xs font-medium bg-neutral-800 text-white shadow-pill">
+            {t("fullscreen_help")}
+          </TooltipContent>
+        </Tooltip>
       </nav>
+      </TooltipProvider>
     </>
   );
 };
+
+// Wrap the whole nav in the I18nProvider so UI language is reactive:
+const TranscriptNav: React.FC<TranscriptNavProps> = (props) => (
+  <I18nProvider>
+    <TranscriptNavInner {...props} />
+  </I18nProvider>
+);
 
 export default TranscriptNav;
