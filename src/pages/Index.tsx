@@ -87,7 +87,7 @@ const Index = () => {
         <TranscriptNav
           recording={recording}
           onMicClick={handleMicClick}
-          textSize={40} // unused, legacy prop
+          textSize={40}
           setTextSize={() => {}} // unused, legacy prop
           leftLang={leftLang}
           rightLang={rightLang}
@@ -112,9 +112,9 @@ const Index = () => {
                 setTextSize={setLeftTextSize}
                 lang={leftLang}
                 showTimestamps={false}
-                showVisibilityToggle
+                showVisibilityToggle={false}
+                pillStyle={false}
                 isRecording={recording}
-                pillStyle={true}
                 visible={leftVisible}
                 setVisible={setLeftVisible}
               />
@@ -130,9 +130,9 @@ const Index = () => {
                 setTextSize={setRightTextSize}
                 lang={rightLang}
                 showTimestamps={false}
-                showVisibilityToggle
+                showVisibilityToggle={false}
+                pillStyle={false}
                 isRecording={recording}
-                pillStyle={true}
                 visible={rightVisible}
                 setVisible={setRightVisible}
               />

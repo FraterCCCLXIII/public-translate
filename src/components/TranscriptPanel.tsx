@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState } from "react";
 import TranscriptPanelControls from "./TranscriptPanelControls";
 import { Slider } from "./ui/slider";
@@ -166,7 +165,9 @@ const TranscriptPanel: React.FC<TranscriptPanelProps> = ({
   const showHeader = !isRecording || isHovered;
 
   // Pill wrapper classes
-  const pillClass = "rounded-full bg-gray-100 dark:bg-neutral-900 shadow-inner px-6 py-6 mx-2 flex items-center transition-all duration-200";
+  const pillClass = pillStyle
+    ? "rounded-full bg-gray-100 dark:bg-neutral-900 shadow-inner px-6 py-6 mx-2 flex items-center transition-all duration-200"
+    : "";
 
   return (
     <section
@@ -220,8 +221,8 @@ const TranscriptPanel: React.FC<TranscriptPanelProps> = ({
           audioLoading={audioLoading}
         />
       </div>
-      {/* Pill container for transcript/translation and eye toggle */}
-      <div className={pillStyle ? pillClass : ""} style={{width:"100%", minHeight:"5em"}}>
+      {/* Container for transcript/translation and optional eye toggle */}
+      <div className={pillClass} style={{width:"100%", minHeight:"5em"}}>
         <div
           ref={scrollRef}
           className={`
@@ -277,7 +278,6 @@ const TranscriptPanel: React.FC<TranscriptPanelProps> = ({
                     fontWeight: "inherit"
                   }}
                 >
-                  {/* No timestamps in the main view */}
                   {wordObj.text}
                   {(!reverseOrder && lang === "en" && i !== displayedWords.length - 1) ? " " : ""}
                 </span>
@@ -285,7 +285,7 @@ const TranscriptPanel: React.FC<TranscriptPanelProps> = ({
             )}
           </span>
         </div>
-        {/* Eye toggle (show/hide) icon in pill, aligned right */}
+        {/* Only render eye toggle if explicitly enabled (e.g. in modal), never in main columns now */}
         {showVisibilityToggle && typeof visible !== "undefined" && typeof setVisible === "function" && (
           <button
             aria-label="Toggle visibility"
@@ -310,4 +310,3 @@ const TranscriptPanel: React.FC<TranscriptPanelProps> = ({
 };
 
 export default TranscriptPanel;
-
