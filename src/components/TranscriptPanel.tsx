@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState } from "react";
 import TranscriptPanelControls from "./TranscriptPanelControls";
 import { Slider } from "./ui/slider";
@@ -145,6 +144,9 @@ const TranscriptPanel: React.FC<TranscriptPanelProps> = ({
     }
   };
 
+  // Defensive: ensure textSize is always a number (default fallback 80)
+  const safeTextSize = typeof textSize === 'number' && !isNaN(textSize) ? textSize : 80;
+
   return (
     <section
       className={`
@@ -153,7 +155,7 @@ const TranscriptPanel: React.FC<TranscriptPanelProps> = ({
         relative
       `}
     >
-      {/* NEW: Per-panel text size slider at the top */}
+      {/* Per-panel text size slider at the top */}
       {setTextSize && (
         <div className="flex items-center gap-2 mb-2 w-full">
           <span className="text-xs text-gray-500">A</span>
@@ -161,8 +163,12 @@ const TranscriptPanel: React.FC<TranscriptPanelProps> = ({
             min={32}
             max={128}
             step={1}
-            value={[textSize]}
-            onValueChange={([value]) => setTextSize(value)}
+            value={[safeTextSize]}
+            onValueChange={arr => {
+              // Defensive for if arr is undefined or empty
+              const val = Array.isArray(arr) && arr.length > 0 ? arr[0] : 80;
+              setTextSize(val);
+            }}
             className="w-32"
             aria-label="Font Size"
           />
@@ -206,7 +212,7 @@ const TranscriptPanel: React.FC<TranscriptPanelProps> = ({
             ${displayedWords.length === 0 ? "text-gray-300" : ""}
           `}
           style={{
-            fontSize: textSize + "px",
+            fontSize: safeTextSize + "px",
             wordBreak: "break-word",
             lineHeight: 1.14,
             minHeight: "2em"
@@ -256,4 +262,3 @@ const TranscriptPanel: React.FC<TranscriptPanelProps> = ({
 };
 
 export default TranscriptPanel;
-
