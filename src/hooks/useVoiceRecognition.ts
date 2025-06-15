@@ -89,21 +89,21 @@ export function useVoiceRecognition() {
   // Could be verbose in rapid update scenarios, but useful for tracing
   // Only runs in development
   if (process.env.NODE_ENV === "development") {
-    // Recording change
     if (typeof window !== "undefined") {
-      window.__lastVoiceDebugRecording !== recording &&
+      const w = window as any;
+      if (w.__lastVoiceDebugRecording !== recording) {
         console.log("[useVoiceRecognition] recording state changed:", recording);
-      window.__lastVoiceDebugRecording = recording;
+        w.__lastVoiceDebugRecording = recording;
+      }
 
-      // Result change
       if (
-        !window.__lastVoiceDebugResult ||
-        window.__lastVoiceDebugResult.transcript !== result.transcript ||
-        window.__lastVoiceDebugResult.translation !== result.translation
+        !w.__lastVoiceDebugResult ||
+        w.__lastVoiceDebugResult.transcript !== result.transcript ||
+        w.__lastVoiceDebugResult.translation !== result.translation
       ) {
         console.log("[useVoiceRecognition] result state changed:", result);
+        w.__lastVoiceDebugResult = result;
       }
-      window.__lastVoiceDebugResult = result;
     }
   }
 
