@@ -1,4 +1,3 @@
-
 import React from "react";
 import { AlignLeft, AlignRight } from "lucide-react";
 import AudioPlaybackButton from "./AudioPlaybackButton";
@@ -37,6 +36,9 @@ const TranscriptPanelControls: React.FC<TranscriptPanelControlsProps> = ({
 }) => {
   const AlIcon = align === "left" ? AlignLeft : AlignRight;
 
+  // Let AudioPlaybackButton always be enabled for popover;
+  // just disable the PLAYBACK logic if can't play audio,
+  // but keep the popover interactive.
   return (
     <div className="flex items-center gap-2">
       <button
@@ -54,6 +56,7 @@ const TranscriptPanelControls: React.FC<TranscriptPanelControlsProps> = ({
         setPlaying={setPlaying}
         onPlaybackStart={onPlaybackStart}
         onPlaybackEnd={onPlaybackEnd}
+        // Always enable pointer events; set `disabled` for PLAYBACK only
         disabled={!canAudioPlayback}
         selectedVoice={selectedVoice}
         setSelectedVoice={setSelectedVoice}

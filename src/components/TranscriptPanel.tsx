@@ -8,6 +8,11 @@ function isRTL(lang: string) {
   return RTL_LANGS.has(lang);
 }
 
+const CHAR_REORDERABLE_LANGS = new Set(["ja", "zh", "ko"]);
+function canReorderCharacters(lang: string) {
+  return CHAR_REORDERABLE_LANGS.has(lang);
+}
+
 interface TranscriptWord {
   text: string;
   timestamp?: string;
@@ -81,23 +86,32 @@ const TranscriptPanel: React.FC<TranscriptPanelProps> = ({
     setReverseOrder(!reverseOrder);
   };
 
-  // Accept both string and array input
+  // Accept both string and array input, and only reorder for character-reorderable languages!
   useEffect(() => {
-    let curWords: TranscriptWord[] =
-      Array.isArray(text)
-        ? [...text]
-        : (
-            /[\u4E00-\u9FFF\u3040-\u30FF]/.test(lang || "")
-              ? text.split("").map(t => ({ text: t }))
-              : text.trim().split(/\s+/).filter(Boolean).map(t => ({ text: t }))
-          );
-    if (reverseOrder) curWords = curWords.slice().reverse();
+    // 1. Parse words
+    let curWords: TranscriptWord[] = [];
+    if (Array.isArray(text)) {
+      curWords = [...text];
+    } else if (/[\u4E00-\u9FFF\u3040-\u30FF]/.test(lang || "")) {
+      curWords = text.split("").map(t => ({ text: t }));
+    } else {
+      curWords = text.trim().split(/\s+/).filter(Boolean).map(t => ({ text: t }));
+    }
 
+    // 2. Reverse characters for reorderable languages only!
+    if (reverseOrder && canReorderCharacters(lang)) {
+      curWords = curWords.slice().reverse();
+    }
+
+    // 3. Get previous word list
     let prevWords: string[] =
       /[\u4E00-\u9FFF\u3040-\u30FF]/.test(lang || "")
         ? prevTextRef.current.split("")
         : prevTextRef.current.trim().split(/\s+/).filter(Boolean);
-    if (reverseOrder) prevWords = prevWords.slice().reverse();
+
+    if (reverseOrder && canReorderCharacters(lang)) {
+      prevWords = prevWords.slice().reverse();
+    }
 
     let start = 0;
     while (
@@ -169,6 +183,9 @@ const TranscriptPanel: React.FC<TranscriptPanelProps> = ({
     ? "rounded-full bg-gray-100 dark:bg-neutral-900 shadow-inner px-6 py-6 mx-2 flex items-center transition-all duration-200"
     : "";
 
+  // Direction for <span> (RTL/LTR)
+  const spanDir = isRTL(lang) ? "rtl" : "ltr";
+
   return (
     <section
       className={`
@@ -216,9 +233,16 @@ const TranscriptPanel: React.FC<TranscriptPanelProps> = ({
           align={currentAlign}
           onToggleAlign={handleAlignToggle}
           canAudioPlayback={!!(audioButtonProps && audioButtonProps.text)}
-          onAudioPlayback={handleAudioPlayback}
+          onAudioPlayback={() => {}}
           audioPlaying={!!audioButtonProps?.playing}
-          audioLoading={audioLoading}
+          audioLoading={audioButtonProps?.disabled || false}
+          audioText={audioButtonProps?.text}
+          audioLang={audioButtonProps?.lang}
+          selectedVoice={audioButtonProps?.selectedVoice}
+          setSelectedVoice={audioButtonProps?.setSelectedVoice}
+          setPlaying={audioButtonProps?.setPlaying}
+          onPlaybackStart={audioButtonProps?.onPlaybackStart}
+          onPlaybackEnd={audioButtonProps?.onPlaybackEnd}
         />
       </div>
       {/* Container for transcript/translation and optional eye toggle */}
@@ -241,6 +265,7 @@ const TranscriptPanel: React.FC<TranscriptPanelProps> = ({
           }}
         >
           <span
+            dir={spanDir}
             className={`
               block w-full
               ${currentAlign === "left" ? "text-left" : "text-right"}
