@@ -102,7 +102,7 @@
   }
 }
 
-/* Minimalist custom scrollbar: transparent unless hover; visible track on hover. */
+/* Minimalist custom scrollbar: transparent unless hover; visible thumb on hover with no background track. */
 ::-webkit-scrollbar {
   width: 8px;
   background: transparent;
@@ -115,10 +115,14 @@
 ::-webkit-scrollbar-track {
   background: transparent;
 }
-.scrollbar-thin:hover::-webkit-scrollbar-thumb {
+.scrollbar-thin:hover::-webkit-scrollbar-thumb,
+.scrollbar-thin:focus::-webkit-scrollbar-thumb,
+.scrollbar-thin:active::-webkit-scrollbar-thumb {
   background: #bbbbbb99;
 }
-.scrollbar-thin:hover::-webkit-scrollbar-track {
+.scrollbar-thin:hover::-webkit-scrollbar-track,
+.scrollbar-thin:focus::-webkit-scrollbar-track,
+.scrollbar-thin:active::-webkit-scrollbar-track {
   background: transparent;
 }
 
@@ -126,7 +130,9 @@
 .scrollbar-thin {
   scrollbar-color: transparent transparent;
 }
-.scrollbar-thin:hover {
+.scrollbar-thin:hover,
+.scrollbar-thin:focus,
+.scrollbar-thin:active {
   scrollbar-color: #bbbbbb99 transparent;
 }
 

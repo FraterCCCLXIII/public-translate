@@ -1,5 +1,6 @@
 
 import React, { useEffect, useRef, useState } from "react";
+import { AlignLeft, AlignRight } from "lucide-react";
 
 interface TranscriptPanelProps {
   title: string;
@@ -8,6 +9,11 @@ interface TranscriptPanelProps {
   textSize?: number; // is px
   lang?: string;
 }
+
+const ALIGNMENTS = {
+  left: { icon: AlignLeft, cls: "justify-start text-left" },
+  right: { icon: AlignRight, cls: "justify-end text-right" }
+};
 
 const TranscriptPanel: React.FC<TranscriptPanelProps> = ({
   title,
@@ -20,8 +26,9 @@ const TranscriptPanel: React.FC<TranscriptPanelProps> = ({
   const [displayedWords, setDisplayedWords] = useState<string[]>([]);
   const [animatingWords, setAnimatingWords] = useState<number[]>([]);
   const prevTextRef = useRef<string>("");
+  const [currentAlign, setCurrentAlign] = useState<"left"|"right">(align);
 
-  // Burn-in effect: only fade-in new words
+  // Burn-in effect: only fade-in new words by opacity
   useEffect(() => {
     const curWords = text.split(/\s+/).filter(Boolean);
     const prevWords = prevTextRef.current.split(/\s+/).filter(Boolean);
@@ -49,14 +56,24 @@ const TranscriptPanel: React.FC<TranscriptPanelProps> = ({
     }
   }, [displayedWords]);
 
+  // Toggle alignment (clickable icon)
+  const AlIcon = currentAlign === "left" ? AlignLeft : AlignRight;
+
   return (
     <section
       className={`
         flex flex-col h-full w-full px-8 pt-8 pb-6
-        ${align === "left" ? "items-start" : "items-end"}
+        ${currentAlign === "left" ? "items-start" : "items-end"}
       `}
     >
-      <h2 className="uppercase tracking-widest text-xs font-semibold mb-2 text-gray-400">{title}</h2>
+      <div className="flex flex-row items-center w-full mb-1">
+        <h2 className="uppercase tracking-widest text-xs font-semibold text-gray-400 flex-1">{title}</h2>
+        <button className="ml-2 p-1 rounded hover:bg-accent transition" aria-label="Toggle paragraph alignment"
+          onClick={() => setCurrentAlign(a => a === "left" ? "right" : "left")}
+        >
+          <AlIcon size={18} />
+        </button>
+      </div>
       <div
         ref={scrollRef}
         className={`
@@ -76,14 +93,13 @@ const TranscriptPanel: React.FC<TranscriptPanelProps> = ({
         <span
           className={`
             block
-            ${align === "left" ? "text-left" : "text-right"}
+            ${currentAlign === "left" ? "text-left" : "text-right"}
             font-black leading-tight p-2
             opacity-100
             transition-opacity
             ${displayedWords.length === 0 ? "text-gray-300" : ""}
           `}
           style={{
-            // @ts-ignore
             fontSize: textSize + "px",
             wordBreak: "break-word",
             lineHeight: 1.14,
@@ -96,13 +112,15 @@ const TranscriptPanel: React.FC<TranscriptPanelProps> = ({
             displayedWords.map((word, i) => (
               <span
                 key={i + ":" + word}
-                className={`inline-block mr-1 align-top 
-                  ${animatingWords.includes(i) ? "animate-fade-in-word" : ""}
+                className={`inline-block mr-1 align-top
+                  ${animatingWords.includes(i) ? "fade-in-word" : ""}
                 `}
                 style={{
+                  opacity: animatingWords.includes(i) ? 0 : 1,
                   animation: animatingWords.includes(i)
-                    ? "fade-in-word 1.2s forwards"
+                    ? "fade-in-opacity 1.2s forwards"
                     : undefined,
+                  marginRight: lang === "en" ? "0.25em" : undefined,
                 }}
               >
                 {word}
@@ -111,9 +129,9 @@ const TranscriptPanel: React.FC<TranscriptPanelProps> = ({
           )}
         </span>
         <style>{`
-            @keyframes fade-in-word {
-              0% { opacity: 0; transform: translateY(10px);}
-              100% { opacity: 1; transform: none;}
+            @keyframes fade-in-opacity {
+              0% { opacity: 0;}
+              100% { opacity: 1;}
             }
         `}</style>
       </div>

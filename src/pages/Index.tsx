@@ -33,7 +33,7 @@ const Index: React.FC = () => {
         className="w-full h-screen max-w-7xl mx-auto px-0 gap-0 rounded-none border-none shadow-none mb-0"
       >
         {leftVisible && (
-          <ResizablePanel minSize={20}>
+          <ResizablePanel minSize={20} id="left" order={1}>
             <TranscriptPanel
               title={leftLang.toUpperCase()}
               text={result.transcript}
@@ -46,18 +46,15 @@ const Index: React.FC = () => {
         {leftVisible && rightVisible && (
           <ResizableHandle
             withHandle={false}
-            className={`
-              transition-colors bg-transparent data-[panel-group-direction=horizontal]:w-2 
-              ${handleHovered ? "bg-gray-200" : ""}
-            `}
+            className={`transition-colors bg-transparent data-[panel-group-direction=horizontal]:w-2`}
             onMouseEnter={() => setHandleHovered(true)}
             onMouseLeave={() => setHandleHovered(false)}
           >
-            <div className={`w-full h-full flex items-center justify-center transition-opacity ${handleHovered ? "opacity-100" : "opacity-0"}`} />
+            {/* Line grip handled in ResizableHandle (UI file) */}
           </ResizableHandle>
         )}
         {rightVisible && (
-          <ResizablePanel minSize={20}>
+          <ResizablePanel minSize={20} id="right" order={2}>
             <TranscriptPanel
               title={rightLang.toUpperCase()}
               text={result.translation}

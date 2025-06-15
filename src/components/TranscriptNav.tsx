@@ -10,6 +10,63 @@ import { Button } from "@/components/ui/button";
 import { Dialog } from "@radix-ui/react-dialog";
 import { saveAs } from "file-saver";
 
+const LANGUAGES = [
+  { value: "en", label: "English", alphabet: "latin" },
+  { value: "ja", label: "Japanese", alphabet: "kana" },
+  { value: "fr", label: "French", alphabet: "latin" },
+  { value: "de", label: "German", alphabet: "latin" },
+  { value: "es", label: "Spanish", alphabet: "latin" },
+  { value: "zh", label: "Chinese", alphabet: "han" }
+];
+
+const pxPresets = [
+  { value: 32, label: "32px" },
+  { value: 40, label: "40px" },
+  { value: 48, label: "48px" },
+  { value: 56, label: "56px" },
+  { value: 68, label: "68px" },
+  { value: 80, label: "80px" },
+  { value: 96, label: "96px" },
+  { value: 112, label: "112px" },
+  { value: 128, label: "128px" },
+];
+
+const LLM_MODELS = [
+  { value: "openai", label: "OpenAI" },
+  { value: "claude", label: "Claude" },
+  { value: "deepseek", label: "Deepseek" },
+  { value: "localllm", label: "Local LLM" },
+];
+const TTS_PROVIDERS = [
+  { value: "", label: "None" },
+  { value: "elevenlabs", label: "ElevenLabs" },
+  { value: "playht", label: "PlayHT" },
+  { value: "localllm", label: "Local LLM" },
+  { value: "openvoice", label: "OpenVoice" },
+  { value: "xtts", label: "XTTS" },
+  { value: "bark", label: "Bark" },
+];
+
+const TTS_VOICES: { [key: string]: { value: string, label: string }[] } = {
+  elevenlabs: [
+    { value: "9BWtsMINqrJLrRacOk9x", label: "Aria" },
+    { value: "CwhRBWXzGAHq8TQ4Fs17", label: "Roger" },
+    { value: "EXAVITQu4vr4xnSDxMaL", label: "Sarah" },
+    { value: "FGY2WhTYpPnrIDTdsKH5", label: "Laura" },
+    { value: "TX3LPaxmHKxFdv7VOQHJ", label: "Liam" },
+    { value: "SAz9YHcvj6GT2YYXdXww", label: "River" },
+    { value: "XB0fDUnXU5powFXDhCwa", label: "Charlotte" },
+    { value: "N2lVS1w4EtoT3dr4eOWO", label: "Callum" },
+    // ...add more
+  ],
+  playht: [{ value: "default", label: "Default" }],
+  localllm: [{ value: "local", label: "Local Default" }],
+  openvoice: [{ value: "openvoice", label: "OpenVoice" }],
+  xtts: [{ value: "xtts", label: "XTTS Default" }],
+  bark: [{ value: "bark", label: "Bark Default" }],
+  "": [],
+};
+
 interface TranscriptNavProps {
   className?: string;
   recording: boolean;
@@ -27,25 +84,6 @@ interface TranscriptNavProps {
   transcript: string;
   translation: string;
 }
-
-const LANGUAGES = [
-  { value: "en", label: "English", alphabet: "latin" },
-  { value: "ja", label: "Japanese", alphabet: "kana" },
-  { value: "fr", label: "French", alphabet: "latin" },
-  { value: "de", label: "German", alphabet: "latin" },
-  { value: "es", label: "Spanish", alphabet: "latin" },
-  { value: "zh", label: "Chinese", alphabet: "han" }
-];
-
-const pxPresets = [
-  { value: 40, label: "40px" },
-  { value: 56, label: "56px" },   // ~3.5rem
-  { value: 68, label: "68px" },
-  { value: 80, label: "80px" },
-  { value: 96, label: "96px" },   // base present in tailwind 6xl
-  { value: 112, label: "112px" },
-  { value: 128, label: "128px" }
-];
 
 const TranscriptNav: React.FC<TranscriptNavProps> = ({
   className = "",
@@ -100,18 +138,29 @@ const TranscriptNav: React.FC<TranscriptNavProps> = ({
 
   // Settings modal (popover)
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [llmProvider, setLlmProvider] = useState<string>(() => localStorage.getItem("llm_provider") || "openai");
   const [openaiKey, setOpenaiKey] = useState<string>(() => localStorage.getItem("openai_api_key") || "");
-  const [ttsProvider, setTtsProvider] = useState<string>(() => localStorage.getItem("tts_provider") || "");
+  const [ttslib, setTtslib] = useState<string>(() => localStorage.getItem("tts_provider") || "");
   const [ttsKey, setTtsKey] = useState<string>(() => localStorage.getItem("tts_api_key") || "");
+  const [ttsVoice, setTtsVoice] = useState<string>(() => localStorage.getItem("tts_voice") || "");
+
+  // Only show voice options for TTS with voice choices
+  useEffect(() => {
+    if (!TTS_VOICES[ttslib]?.find(v => v.value === ttsVoice)) {
+      setTtsVoice(TTS_VOICES[ttslib]?.[0]?.value || "");
+    }
+  }, [ttslib]);
 
   const saveSettings = () => {
     localStorage.setItem("openai_api_key", openaiKey);
-    localStorage.setItem("tts_provider", ttsProvider);
+    localStorage.setItem("llm_provider", llmProvider);
+    localStorage.setItem("tts_provider", ttslib);
     localStorage.setItem("tts_api_key", ttsKey);
+    localStorage.setItem("tts_voice", ttsVoice);
     setSettingsOpen(false);
   };
 
-  // Font size slider popover display
+  // Font size slider popover
   const [showFontSize, setShowFontSize] = useState(false);
 
   // Transcript dialog
@@ -123,25 +172,26 @@ const TranscriptNav: React.FC<TranscriptNavProps> = ({
     saveAs(blob, "transcript.txt");
   };
 
+  // Responsive container (hug content)
   return (
     <>
-      {/* Transcript Modal */}
+      {/* Transcript Modal - full screen */}
       {showTranscript && (
         <Dialog open onOpenChange={setShowTranscript}>
-          <div className="fixed inset-0 bg-black/40 z-[100] flex items-center justify-center">
-            <div className="bg-white dark:bg-background w-full max-w-lg p-6 rounded-lg shadow-lg z-[101]">
+          <div className="fixed inset-0 bg-black/60 z-[9999] flex items-center justify-center p-2 animate-fade-in">
+            <div className="bg-white dark:bg-background w-full h-full max-w-4xl max-h-[99vh] p-6 flex flex-col rounded-lg shadow-lg z-[10000]">
               <div className="flex justify-between items-center mb-2">
-                <h3 className="font-bold text-lg">Full Transcript</h3>
+                <h3 className="font-bold text-xl">Full Transcript</h3>
                 <Button variant="outline" size="sm" onClick={() => setShowTranscript(false)}>Close</Button>
               </div>
-              <div className="flex flex-row gap-4">
-                <div className="flex-1">
+              <div className="flex flex-col md:flex-row gap-4 h-full overflow-auto">
+                <div className="flex-1 flex flex-col min-w-0">
                   <h4 className="font-semibold text-xs mb-1">{LANGUAGES.find(l => l.value===leftLang)?.label || leftLang}</h4>
-                  <div className="bg-gray-100 dark:bg-gray-800 p-2 rounded mb-2 max-h-48 overflow-y-auto text-xs">{transcript}</div>
+                  <div className="bg-gray-100 dark:bg-gray-800 p-2 rounded mb-2 max-h-full flex-1 overflow-y-auto text-xs">{transcript}</div>
                 </div>
-                <div className="flex-1">
+                <div className="flex-1 flex flex-col min-w-0">
                   <h4 className="font-semibold text-xs mb-1">{LANGUAGES.find(l => l.value===rightLang)?.label || rightLang}</h4>
-                  <div className="bg-gray-100 dark:bg-gray-800 p-2 rounded mb-2 max-h-48 overflow-y-auto text-xs">{translation}</div>
+                  <div className="bg-gray-100 dark:bg-gray-800 p-2 rounded mb-2 max-h-full flex-1 overflow-y-auto text-xs">{translation}</div>
                 </div>
               </div>
               <Button onClick={handleDownload} className="w-full mt-2" variant="default">Download</Button>
@@ -149,22 +199,25 @@ const TranscriptNav: React.FC<TranscriptNavProps> = ({
           </div>
         </Dialog>
       )}
-
       <nav
         ref={navRef}
         className={`
-          fixed z-50 left-0 right-0 bottom-0 mx-auto
-          w-full max-w-2xl
-          flex flex-row justify-center items-center
+          fixed z-50 left-1/2 bottom-0 
+          transform -translate-x-1/2
+          mx-auto 
+          inline-flex
+          flex-row justify-center items-center
           space-x-3
           bg-white/90 dark:bg-background/90 border border-gray-300 dark:border-gray-700 shadow-lg rounded-full px-4 py-2 backdrop-blur-xl
           transition-opacity duration-500
+          mb-4
           ${visible ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}
           ${className}
         `}
-        style={{ transition: "opacity 0.5s", marginBottom: "1rem" }}
+        style={{ transition: "opacity 0.5s", marginBottom: "1rem", maxWidth: "100vw" }}
         onMouseEnter={handleMouseEnter}
       >
+        {/* Mic button moved to left */}
         <MicButton
           recording={recording}
           onClick={onMicClick}
@@ -184,6 +237,7 @@ const TranscriptNav: React.FC<TranscriptNavProps> = ({
               ))}
             </SelectContent>
           </Select>
+          {/* Eye icon for panel show/hide */}
           <Button
             variant="ghost"
             size="icon"
@@ -280,40 +334,71 @@ const TranscriptNav: React.FC<TranscriptNavProps> = ({
               <Settings size={22} />
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-72">
+          <PopoverContent className="w-80">
             <div className="flex flex-col gap-4">
               <div>
-                <label className="font-bold text-xs text-gray-700">OpenAI API key (translation)</label>
-                <input
+                <label className="font-bold text-xs text-gray-700">AI Model Provider</label>
+                <select
+                  value={llmProvider}
                   className="w-full mt-1 border rounded px-2 py-1 bg-background"
-                  value={openaiKey}
-                  type="password"
-                  onChange={e => setOpenaiKey(e.target.value)}
-                  placeholder="sk-..."
-                />
+                  onChange={e => setLlmProvider(e.target.value)}
+                >
+                  {LLM_MODELS.map(o => (
+                    <option key={o.value} value={o.value}>{o.label}</option>
+                  ))}
+                </select>
               </div>
+              {/* Conditional keys per provider */}
+              {llmProvider === "openai" && (
+                <div>
+                  <label className="font-bold text-xs text-gray-700">OpenAI API key</label>
+                  <input
+                    className="w-full mt-1 border rounded px-2 py-1 bg-background"
+                    value={openaiKey}
+                    type="password"
+                    onChange={e => setOpenaiKey(e.target.value)}
+                    placeholder="sk-..."
+                  />
+                </div>
+              )}
               <div>
                 <label className="font-bold text-xs text-gray-700">TTS Provider</label>
                 <select
-                  value={ttsProvider}
+                  value={ttslib}
                   className="w-full mt-1 border rounded px-2 py-1 bg-background"
-                  onChange={e => setTtsProvider(e.target.value)}
+                  onChange={e => setTtslib(e.target.value)}
                 >
-                  <option value="">None</option>
-                  <option value="elevenlabs">ElevenLabs</option>
-                  <option value="playht">PlayHT</option>
+                  {TTS_PROVIDERS.map(o => (
+                    <option key={o.value} value={o.value}>{o.label}</option>
+                  ))}
                 </select>
               </div>
-              <div>
-                <label className="font-bold text-xs text-gray-700">TTS API key</label>
-                <input
-                  className="w-full mt-1 border rounded px-2 py-1 bg-background"
-                  value={ttsKey}
-                  type="password"
-                  onChange={e => setTtsKey(e.target.value)}
-                  placeholder="Your TTS API key"
-                />
-              </div>
+              {(ttslib && ttslib !== "") && (
+                <>
+                  <div>
+                    <label className="font-bold text-xs text-gray-700">TTS API key</label>
+                    <input
+                      className="w-full mt-1 border rounded px-2 py-1 bg-background"
+                      value={ttsKey}
+                      type="password"
+                      onChange={e => setTtsKey(e.target.value)}
+                      placeholder="Your TTS API key"
+                    />
+                  </div>
+                  <div>
+                    <label className="font-bold text-xs text-gray-700">Voice</label>
+                    <select
+                      value={ttsVoice}
+                      className="w-full mt-1 border rounded px-2 py-1 bg-background"
+                      onChange={e => setTtsVoice(e.target.value)}
+                    >
+                      {TTS_VOICES[ttslib]?.map(opt => (
+                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                </>
+              )}
               <Button onClick={saveSettings} className="w-full" variant="default">Save</Button>
             </div>
           </PopoverContent>
