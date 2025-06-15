@@ -12,6 +12,7 @@ import AboutModal from "./AboutModal";
 import { useTranslation } from "@/hooks/useTranslation";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
 import { I18nProvider, useI18n } from "@/hooks/useUITitleTranslation";
+import TranscriptPanel from "./TranscriptPanel";
 
 // Dummy translation XML replacement
 const t = (key: string, defaultVal: string) => defaultVal; // Replace with real t() function
