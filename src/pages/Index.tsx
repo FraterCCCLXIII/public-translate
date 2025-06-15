@@ -29,7 +29,18 @@ const LANG_DEFAULTS = {
 };
 
 const Index: React.FC = () => {
-  const { recording, result, start, stop } = useVoiceRecognition();
+  const {
+    recording,
+    result,
+    start,
+    stop,
+    leftLang,
+    rightLang,
+    setLeftLang,
+    setRightLang,
+    retranslate
+  } = useVoiceRecognition();
+
   const [textSize, setTextSize] = useState(80);
   const [leftLang, setLeftLang] = useState(LANG_DEFAULTS.left);
   const [rightLang, setRightLang] = useState(LANG_DEFAULTS.right);
@@ -69,6 +80,66 @@ const Index: React.FC = () => {
       start();
     }
   };
+
+  // Re-translate on language change or mic input change
+  React.useEffect(() => {
+    if (result.transcript) {
+      retranslate(result.transcript, leftLang, rightLang);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [leftLang, rightLang]);
+
+  // Download audio files for transcript and translation on stop
+  React.useEffect(() => {
+    if (!recording && (result.transcript || result.translation)) {
+      // Show shadcn/toaster to let user download audio files
+      import("@/hooks/use-toast").then(({ toast }) => {
+        toast({
+          title: "Recording stopped",
+          description:
+            "Download the audio for your transcript and/or translation below.",
+          action: (
+            <div className="flex gap-2 mt-2">
+              <button
+                className="px-2 py-1 bg-blue-600 text-white text-xs rounded"
+                onClick={() => {
+                  // Basic TTS download using browser's SpeechSynthesis API for transcript (left)
+                  const synth = window.speechSynthesis;
+                  if (window.AudioContext && synth) {
+                    // Not all browsers support exporting TTS, so fallback to text file
+                    const blob = new Blob([result.transcript], { type: "text/plain" });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement("a");
+                    a.href = url;
+                    a.download = "mic_transcript.txt";
+                    a.click();
+                    URL.revokeObjectURL(url);
+                  }
+                }}
+              >
+                Download Transcript
+              </button>
+              <button
+                className="px-2 py-1 bg-green-600 text-white text-xs rounded"
+                onClick={() => {
+                  const blob = new Blob([result.translation], { type: "text/plain" });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement("a");
+                  a.href = url;
+                  a.download = "translation.txt";
+                  a.click();
+                  URL.revokeObjectURL(url);
+                }}
+              >
+                Download Translation
+              </button>
+            </div>
+          ),
+        });
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [recording]);
 
   // --- Silence detection to trigger TTS on right translation ---
   useAutoPlayOnSilence({

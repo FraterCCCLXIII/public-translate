@@ -271,7 +271,9 @@ const TranscriptNav: React.FC<TranscriptNavProps> = ({
 
         {/* Left Language Select */}
         <div className="relative flex items-center w-28">
-          <Select value={leftLang} onValueChange={setLeftLang}>
+          <Select value={leftLang} onValueChange={(val) => {
+            setLeftLang(val); // triggers re-translation in Index
+          }}>
             <SelectTrigger className="w-28">
               <SelectValue aria-label="From language">
                 {LANGUAGES.find(l=>l.value===leftLang)?.label || leftLang}
@@ -298,7 +300,9 @@ const TranscriptNav: React.FC<TranscriptNavProps> = ({
         <span className="text-xs text-gray-400">→</span>
         {/* Right Language Select */}
         <div className="relative flex items-center w-28">
-          <Select value={rightLang} onValueChange={setRightLang}>
+          <Select value={rightLang} onValueChange={(val) => {
+            setRightLang(val); // triggers re-translation in Index
+          }}>
             <SelectTrigger className="w-28">
               <SelectValue aria-label="To language">
                 {LANGUAGES.find(l=>l.value===rightLang)?.label || rightLang}

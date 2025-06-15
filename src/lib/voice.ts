@@ -1,6 +1,10 @@
+
 /**
  * Microphone recording and voice-to-text: fallback to demo if Web Speech API not present.
  */
+import { useRef, useState, useCallback } from "react";
+import { useTranslation } from "@/hooks/useTranslation";
+
 export interface TranscriptResult {
   transcript: string;
   translation: string;
@@ -23,14 +27,16 @@ const demoJapanese = [
 class DemoRecognizer {
   private _timer: any = null;
   private i = 0;
-  start(onResult: Callback) {
+  start(onResult: Callback, leftLang: string, rightLang: string, translate: (params: { text: string, from: string, to: string }) => Promise<string>) {
     this.i = 0;
     this.stop();
-    this._timer = setInterval(() => {
+    this._timer = setInterval(async () => {
       if (this.i < demoEnglish.length) {
+        const transcript = demoEnglish.slice(0, this.i + 1).join(" ");
+        const translation = await translate({ text: transcript, from: leftLang, to: rightLang });
         onResult({
-          transcript: demoEnglish.slice(0, this.i + 1).join(" "),
-          translation: demoJapanese.slice(0, this.i + 1).join(" "),
+          transcript,
+          translation,
         });
         this.i++;
       } else {
@@ -53,20 +59,26 @@ class RealVoiceRecognizer {
   private interim = "";
   private transcript = "";
   private onResult: Callback = () => {};
+  private leftLang: string = "en";
+  private rightLang: string = "ja";
+  private translate: (params: { text: string, from: string, to: string }) => Promise<string> = async () => "";
 
-  start(onResult: Callback) {
+  start(onResult: Callback, leftLang: string, rightLang: string, translate: (params: { text: string, from: string, to: string }) => Promise<string>) {
     this.transcript = "";
     this.active = true;
     this.onResult = onResult;
-    // proper type detection of web speech API
+    this.leftLang = leftLang;
+    this.rightLang = rightLang;
+    this.translate = translate;
     const SpeechRecognitionCtor =
       (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognitionCtor) throw new Error("Web Speech API not available");
     this.recognition = new SpeechRecognitionCtor();
     this.recognition.interimResults = true;
-    this.recognition.lang = "en-US";
+    // Use the leftLang for recognition language
+    this.recognition.lang = leftLang === "en" ? "en-US" : leftLang;
     this.recognition.continuous = true;
-    this.recognition.onresult = (event: any) => {
+    this.recognition.onresult = async (event: any) => {
       let finalTranscript = "";
       for (let i = event.resultIndex; i < event.results.length; ++i) {
         if (event.results[i].isFinal) {
@@ -74,10 +86,13 @@ class RealVoiceRecognizer {
         }
       }
       this.transcript = (this.transcript + " " + finalTranscript).trim();
-      // For demo, fake translation
+      // Use actual translation
+      const translation = this.transcript
+        ? await this.translate({ text: this.transcript, from: this.leftLang, to: this.rightLang })
+        : "";
       this.onResult({
         transcript: this.transcript,
-        translation: "（日本語訳のデモ: " + this.transcript + "）",
+        translation,
       });
     };
     this.recognition.onerror = () => {};
@@ -94,7 +109,6 @@ class RealVoiceRecognizer {
   }
 }
 
-import { useRef, useState } from "react";
 export function useVoiceRecognition() {
   const recognizerRef = useRef<any>(null);
   const [recording, setRecording] = useState(false);
@@ -102,6 +116,23 @@ export function useVoiceRecognition() {
     transcript: "",
     translation: "",
   });
+  // Language states
+  const [leftLang, setLeftLang] = useState("en");
+  const [rightLang, setRightLang] = useState("ja");
+  // Translation logic
+  const { translate } = useTranslation();
+
+  // Re-translate if transcript, leftLang, or rightLang changes
+  const retranslate = useCallback(
+    async (newTranscript: string, lLang: string = leftLang, rLang: string = rightLang) => {
+      const translation = await translate({ text: newTranscript, from: lLang, to: rLang });
+      setResult({
+        transcript: newTranscript,
+        translation,
+      });
+    },
+    [leftLang, rightLang, translate]
+  );
 
   const start = () => {
     setRecording(true);
@@ -116,7 +147,12 @@ export function useVoiceRecognition() {
         recognizerRef.current = new DemoRecognizer();
       }
     }
-    recognizerRef.current.start((data: TranscriptResult) => setResult(data));
+    recognizerRef.current.start(
+      (data: TranscriptResult) => setResult(data),
+      leftLang,
+      rightLang,
+      translate
+    );
   };
 
   const stop = () => {
@@ -124,10 +160,16 @@ export function useVoiceRecognition() {
     recognizerRef.current?.stop();
   };
 
+  // Allow Index to set langs via setter
   return {
     recording,
     result,
     start,
     stop,
+    leftLang,
+    rightLang,
+    setLeftLang,
+    setRightLang,
+    retranslate,
   };
 }
