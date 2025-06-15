@@ -3,7 +3,8 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import MicButton from "./MicButton";
-import { Sun, Moon, Settings, Eye, Info, Maximize, Page } from "lucide-react";
+import { Sun, Moon, Settings, Eye, Info, Maximize } from "lucide-react";
+import { page } from "lucide-react"; // FIXED: import the lowercase 'page'
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@radix-ui/react-dialog";
@@ -102,6 +103,19 @@ interface TranscriptNavProps {
   translation: string;
   navVisible?: boolean;
   setNavVisible?: (b: boolean) => void;
+}
+
+// Small render helper for Lucide iconNode icon
+function PageIcon(props: React.SVGProps<SVGSVGElement>) {
+  // Lucide exports the icon node as [string, props][]
+  // We replicate the internal structure for rendering:
+  return React.createElement(
+    "svg",
+    { width: 20, height: 20, fill: "none", stroke: "currentColor", ...props, viewBox: "0 0 24 24" },
+    page[1].map(([tag, attrs], i) =>
+      React.createElement(tag, { key: i, ...attrs })
+    )
+  );
 }
 
 const TranscriptNavInner: React.FC<TranscriptNavProps> = ({
@@ -385,7 +399,7 @@ const TranscriptNavInner: React.FC<TranscriptNavProps> = ({
               onClick={() => setShowTranscript(true)}
               aria-label={t("view_full_transcript")}
             >
-              <Page size={20} />
+              <PageIcon /> {/* FIXED: Use the proper Page icon */}
             </Button>
           </TooltipTrigger>
           <TooltipContent side="top" className="rounded-full px-3 py-1 text-xs font-medium bg-neutral-800 text-white shadow-pill">
