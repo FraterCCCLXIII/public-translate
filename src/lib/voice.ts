@@ -1,4 +1,3 @@
-
 /**
  * Microphone recording and voice-to-text: fallback to demo if Web Speech API not present.
  */
@@ -28,12 +27,14 @@ class DemoRecognizer {
   private _timer: any = null;
   private i = 0;
   start(onResult: Callback, leftLang: string, rightLang: string, translate: (params: { text: string, from: string, to: string }) => Promise<string>) {
+    console.log('[DemoRecognizer] start, langs:', { leftLang, rightLang });
     this.i = 0;
     this.stop();
     this._timer = setInterval(async () => {
       if (this.i < demoEnglish.length) {
         const transcript = demoEnglish.slice(0, this.i + 1).join(" ");
         const translation = await translate({ text: transcript, from: leftLang, to: rightLang });
+        console.log('[DemoRecognizer] demo transcript updated', { transcript, translation });
         onResult({
           transcript,
           translation,
@@ -45,6 +46,7 @@ class DemoRecognizer {
     }, 1400);
   }
   stop() {
+    console.log('[DemoRecognizer] stop called');
     if (this._timer) {
       clearInterval(this._timer);
     }
@@ -72,13 +74,16 @@ class RealVoiceRecognizer {
     this.translate = translate;
     const SpeechRecognitionCtor =
       (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (!SpeechRecognitionCtor) throw new Error("Web Speech API not available");
+    if (!SpeechRecognitionCtor) {
+      console.error('[RealVoiceRecognizer] Web Speech API not available');
+      throw new Error("Web Speech API not available");
+    }
     this.recognition = new SpeechRecognitionCtor();
     this.recognition.interimResults = true;
-    // Use the leftLang for recognition language
     this.recognition.lang = leftLang === "en" ? "en-US" : leftLang;
     this.recognition.continuous = true;
     this.recognition.onresult = async (event: any) => {
+      console.log('[RealVoiceRecognizer] onresult event', event);
       let finalTranscript = "";
       for (let i = event.resultIndex; i < event.results.length; ++i) {
         if (event.results[i].isFinal) {
@@ -90,20 +95,26 @@ class RealVoiceRecognizer {
       const translation = this.transcript
         ? await this.translate({ text: this.transcript, from: this.leftLang, to: this.rightLang })
         : "";
+      console.log('[RealVoiceRecognizer] transcript/translation', {transcript: this.transcript, translation});
       this.onResult({
         transcript: this.transcript,
         translation,
       });
     };
-    this.recognition.onerror = () => {};
+    this.recognition.onerror = (event: any) => {
+      console.error('[RealVoiceRecognizer] onerror event', event);
+    };
     this.recognition.onend = () => {
       this.active = false;
+      console.log('[RealVoiceRecognizer] recognition ended');
     };
+    console.log('[RealVoiceRecognizer] recognition.start() called, lang:', this.recognition.lang);
     this.recognition.start();
   }
   stop() {
     if (this.recognition && this.active) {
       this.recognition.stop();
+      console.log('[RealVoiceRecognizer] recognition.stop() called');
     }
     this.active = false;
   }
@@ -125,6 +136,7 @@ export function useVoiceRecognition() {
   // Re-translate if transcript, leftLang, or rightLang changes
   const retranslate = useCallback(
     async (newTranscript: string, lLang: string = leftLang, rLang: string = rightLang) => {
+      console.log('[useVoiceRecognition] retranslate called', { newTranscript, lLang, rLang });
       const translation = await translate({ text: newTranscript, from: lLang, to: rLang });
       setResult({
         transcript: newTranscript,
@@ -139,25 +151,38 @@ export function useVoiceRecognition() {
     const SpeechRecognitionCtor =
       (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (SpeechRecognitionCtor) {
+      console.log('[useVoiceRecognition] Using RealVoiceRecognizer');
       if (!recognizerRef.current || !(recognizerRef.current instanceof RealVoiceRecognizer)) {
         recognizerRef.current = new RealVoiceRecognizer();
       }
     } else {
+      console.log('[useVoiceRecognition] Using DemoRecognizer');
       if (!recognizerRef.current || !(recognizerRef.current instanceof DemoRecognizer)) {
         recognizerRef.current = new DemoRecognizer();
       }
     }
-    recognizerRef.current.start(
-      (data: TranscriptResult) => setResult(data),
-      leftLang,
-      rightLang,
-      translate
-    );
+    try {
+      recognizerRef.current.start(
+        (data: TranscriptResult) => {
+          console.log('[useVoiceRecognition] onResult:', data);
+          setResult(data);
+        },
+        leftLang,
+        rightLang,
+        translate
+      );
+    } catch (e) {
+      console.error('[useVoiceRecognition] Error starting recognizer', e);
+      setRecording(false);
+    }
   };
 
   const stop = () => {
     setRecording(false);
-    recognizerRef.current?.stop();
+    if (recognizerRef.current) {
+      console.log('[useVoiceRecognition] stop called');
+      recognizerRef.current.stop();
+    }
   };
 
   // Allow Index to set langs via setter

@@ -71,6 +71,7 @@ const Index: React.FC = () => {
 
   // If mic icon is pressed, ensure audio stops.
   const handleMicClick = () => {
+    console.log('[Index] Mic button clicked. Current recording:', recording, 'Left audio playing:', leftAudioPlaying, 'Right audio playing:', rightAudioPlaying);
     if (leftAudioPlaying) setLeftAudioPlaying(false);
     if (rightAudioPlaying) setRightAudioPlaying(false);
 
