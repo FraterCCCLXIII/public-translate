@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useRef } from "react";
 import { AudioLines, LoaderCircle, Settings as SettingsIcon } from "lucide-react";
 import { Popover, PopoverTrigger, PopoverContent } from "./ui/popover";
@@ -135,23 +134,25 @@ const AudioPlaybackButton: React.FC<AudioPlaybackButtonProps> = ({
           ))}
         </div>
       </PopoverContent>
-      <style jsx>{`
-        .custom-scrollbar {
-          scrollbar-width: thin;
-          scrollbar-color: #94a3b8 #e5e7eb;
-        }
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 8px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: #94a3b8;
-          border-radius: 4px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: #e5e7eb;
-          border-radius: 4px;
-        }
-      `}</style>
+      <style>
+        {`
+          .custom-scrollbar {
+            scrollbar-width: thin;
+            scrollbar-color: #94a3b8 #e5e7eb;
+          }
+          .custom-scrollbar::-webkit-scrollbar {
+            width: 8px;
+          }
+          .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #94a3b8;
+            border-radius: 4px;
+          }
+          .custom-scrollbar::-webkit-scrollbar-track {
+            background: #e5e7eb;
+            border-radius: 4px;
+          }
+        `}
+      </style>
     </Popover>
   );
 };
