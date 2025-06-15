@@ -2,7 +2,7 @@
 import React from "react";
 import { Dialog } from "@radix-ui/react-dialog";
 import { Button } from "@/components/ui/button";
-import { Info } from "lucide-react";
+import { Info, Github } from "lucide-react";
 
 interface AboutModalProps {
   open: boolean;
@@ -38,8 +38,19 @@ const AboutModal: React.FC<AboutModalProps> = ({ open, onOpenChange }) => (
               <b>On Mobile/TV:</b> Open publictranslate.vercel.app in the mobile/TV browser and select "Add to Home Screen" for full-screen usage.
             </li>
           </ul>
-          <div className="mt-4 text-xs text-gray-600 dark:text-gray-400 border-t pt-2">
-            <span>For more info, see the <a href="https://docs.lovable.dev/tips-tricks/troubleshooting" className="underline" target="_blank" rel="noopener">help docs</a>. Built with ❤️ on Lovable.</span>
+          <div className="mt-4 text-xs text-gray-600 dark:text-gray-400 border-t pt-2 flex items-center gap-2">
+            <a
+              href="https://github.com/your-repo-url"
+              className="flex items-center gap-1 underline text-blue-700 dark:text-blue-400"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="View on GitHub"
+            >
+              <Github size={16} /> Source on GitHub
+            </a>
+            <span>
+              | <a href="https://docs.lovable.dev/tips-tricks/troubleshooting" className="underline" target="_blank" rel="noopener">Help docs</a>
+            </span>
           </div>
         </div>
         <Button className="w-full mt-4" onClick={() => onOpenChange(false)}>

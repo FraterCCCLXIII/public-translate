@@ -3,7 +3,7 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import MicButton from "./MicButton";
-import { Sun, Moon, Settings, Eye, Info } from "lucide-react";
+import { Sun, Moon, Settings, Eye, Info, Maximize, Github } from "lucide-react";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@radix-ui/react-dialog";
@@ -200,6 +200,15 @@ const TranscriptNav: React.FC<TranscriptNavProps> = ({
     saveAs(blob, "transcript.txt");
   };
 
+  // NEW: Fullscreen handler (Maximize icon)
+  const handleMaximize = () => {
+    if (document.fullscreenElement) {
+      document.exitFullscreen();
+    } else {
+      document.documentElement.requestFullscreen();
+    }
+  };
+
   // Responsive container and aria label for nav
   return (
     <>
@@ -254,16 +263,6 @@ const TranscriptNav: React.FC<TranscriptNavProps> = ({
         }}
         onMouseEnter={handleMouseEnter}
       >
-        {/* Info icon */}
-        <Button
-          variant="ghost"
-          size="icon"
-          className="mr-2"
-          aria-label="About this app"
-          onClick={() => setAboutOpen(true)}
-        >
-          <Info size={22} />
-        </Button>
         {/* Mic button moved to left */}
         <MicButton
           recording={recording}
@@ -514,6 +513,28 @@ const TranscriptNav: React.FC<TranscriptNavProps> = ({
             </div>
           </PopoverContent>
         </Popover>
+
+        {/* Info icon - now just right of settings icon */}
+        <Button
+          variant="ghost"
+          size="icon"
+          className="ml-1"
+          aria-label="About this app"
+          onClick={() => setAboutOpen(true)}
+        >
+          <Info size={22} />
+        </Button>
+
+        {/* Maximize screen icon, far right */}
+        <Button
+          variant="ghost"
+          size="icon"
+          className="ml-2"
+          aria-label="Fullscreen"
+          onClick={handleMaximize}
+        >
+          <Maximize size={22} />
+        </Button>
       </nav>
     </>
   );
