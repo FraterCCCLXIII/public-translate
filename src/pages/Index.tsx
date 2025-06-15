@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import TranscriptNav from "@/components/TranscriptNav";
 import NUX from "@/components/NUX";
 import TranscriptPanel from "@/components/TranscriptPanel";
+import { useVoiceRecognition } from "@/hooks/useVoiceRecognition";
 
 // Temporary dummy transcript with timestamps for demo
 const transcriptData = [
@@ -28,8 +29,17 @@ const LANGUAGES = [
 ];
 
 const Index = () => {
-  // Get recording status, and control state for NUX
-  const [recording, setRecording] = useState(false);
+  // Use the voice recognition hook
+  const {
+    recording,
+    result,
+    start,
+    stop,
+    leftLang,
+    rightLang,
+    setLeftLang,
+    setRightLang,
+  } = useVoiceRecognition();
 
   // Determine if user has completed NUX
   const [showNUX, setShowNUX] = useState(() => {
@@ -40,9 +50,7 @@ const Index = () => {
   const [leftTextSize, setLeftTextSize] = useState(40);
   const [rightTextSize, setRightTextSize] = useState(40);
 
-  // Example language/visibility state for left/right panels
-  const [leftLang, setLeftLang] = useState("en");
-  const [rightLang, setRightLang] = useState("ja");
+  // Panel visibility state
   const [leftVisible, setLeftVisible] = useState(true);
   const [rightVisible, setRightVisible] = useState(true);
 
@@ -50,7 +58,6 @@ const Index = () => {
   const handleNUXFinish = () => {
     localStorage.setItem("nux_complete", "1");
     setShowNUX(false);
-    // No reload; let language/state changes apply live
   };
 
   // If recording started, close NUX if open
@@ -60,18 +67,18 @@ const Index = () => {
     }
   }, [recording, showNUX]);
 
-  // Provide a typed callback for TranscriptNav to control recording state
+  // Handle mic click to toggle recording
   const handleMicClick = () => {
-    setRecording((r) => !r);
+    if (recording) {
+      stop();
+    } else {
+      start();
+    }
   };
 
   // Helpers to get language labels
   const leftLabel = LANGUAGES.find(l => l.value === leftLang)?.label || leftLang;
   const rightLabel = LANGUAGES.find(l => l.value === rightLang)?.label || rightLang;
-
-  // Create text for transcript and translation
-  const transcriptText = transcriptData.map(t => t.text).join(" ");
-  const translationText = translationData.map(t => t.text).join(" ");
 
   return (
     <>
@@ -97,8 +104,8 @@ const Index = () => {
           rightVisible={rightVisible}
           setLeftVisible={setLeftVisible}
           setRightVisible={setRightVisible}
-          transcript={transcriptText}
-          translation={translationText}
+          transcript={result.transcript}
+          translation={result.translation}
         />
         {/* Render transcript panels as main content */}
         <div className="flex flex-row gap-4 w-full max-w-6xl mx-auto mt-6">
@@ -106,7 +113,7 @@ const Index = () => {
             <div className="flex-1 min-w-0">
               <TranscriptPanel
                 title={leftLabel}
-                text={transcriptData}
+                text={[{ text: result.transcript, timestamp: "" }]}
                 align="left"
                 textSize={leftTextSize}
                 setTextSize={setLeftTextSize}
@@ -124,7 +131,7 @@ const Index = () => {
             <div className="flex-1 min-w-0">
               <TranscriptPanel
                 title={rightLabel}
-                text={translationData}
+                text={[{ text: result.translation, timestamp: "" }]}
                 align="right"
                 textSize={rightTextSize}
                 setTextSize={setRightTextSize}
