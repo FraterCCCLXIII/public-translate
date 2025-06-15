@@ -1,6 +1,13 @@
 
 import React from "react";
-import { Dialog } from "@radix-ui/react-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogClose,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Info, Github } from "lucide-react";
 
@@ -11,12 +18,14 @@ interface AboutModalProps {
 
 const AboutModal: React.FC<AboutModalProps> = ({ open, onOpenChange }) => (
   <Dialog open={open} onOpenChange={onOpenChange}>
-    <div className="fixed inset-0 z-[9999] bg-black/60 flex items-center justify-center p-0 animate-fade-in">
-      <div className="bg-white dark:bg-background w-full max-w-md mx-auto p-6 rounded-lg shadow-lg z-[10000] relative">
+    <DialogContent>
+      <DialogHeader>
         <div className="flex items-center gap-2 mb-2">
           <Info className="text-blue-500" size={28} />
-          <h2 className="text-lg font-bold">Public:Translate 言語機</h2>
+          <DialogTitle className="text-lg font-bold">Public:Translate 言語機</DialogTitle>
         </div>
+      </DialogHeader>
+      <DialogDescription>
         <div className="text-sm text-gray-800 dark:text-gray-100">
           <p>
             <b>Public:Translate 言語機</b> is a simple, live translation display for sharing spoken text and translation to an audience—whether in classrooms, talks, remotely, or on a TV.
@@ -53,11 +62,11 @@ const AboutModal: React.FC<AboutModalProps> = ({ open, onOpenChange }) => (
             </span>
           </div>
         </div>
-        <Button className="w-full mt-4" onClick={() => onOpenChange(false)}>
-          Close
-        </Button>
-      </div>
-    </div>
+      </DialogDescription>
+      <DialogClose asChild>
+        <Button className="w-full mt-4">Close</Button>
+      </DialogClose>
+    </DialogContent>
   </Dialog>
 );
 
