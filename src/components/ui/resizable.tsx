@@ -29,12 +29,13 @@ const ResizableHandle = ({
   hovered?: boolean;
 }) => {
   const [active, setActive] = React.useState(false);
+  const showHandle = hovered || active;
 
   return (
     <ResizablePrimitive.PanelResizeHandle
       className={cn(
         "relative flex w-2 items-center justify-center transition-colors bg-transparent data-[panel-group-direction=vertical]:h-px data-[panel-group-direction=vertical]:w-full",
-        (active || hovered) && "bg-gray-300 dark:bg-gray-700",
+        showHandle ? "bg-gray-300 dark:bg-gray-700" : "bg-transparent",
         className
       )}
       {...props}
@@ -48,8 +49,9 @@ const ResizableHandle = ({
         window.addEventListener("mouseup", up);
       }}
       data-active={active ? "true" : undefined}
+      style={{ opacity: showHandle ? 1 : 0 }}
     >
-      {(hovered || active) && (
+      {showHandle && (
         <div
           className={cn(
             "absolute left-0 top-0 h-full w-full pointer-events-none transition-opacity duration-300",

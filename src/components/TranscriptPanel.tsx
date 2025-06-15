@@ -1,15 +1,8 @@
 
 import React, { useEffect, useRef, useState } from "react";
-import { AlignLeft, AlignRight } from "lucide-react";
-import AudioPlaybackButton from "./AudioPlaybackButton";
+import TranscriptPanelControls from "./TranscriptPanelControls";
 
-// Utility function to check if language should use RTL order.
-const RTL_LANGS = new Set([
-  "ar", // Arabic
-  "he", // Hebrew
-  "fa", // Farsi/Persian
-  "ur", // Urdu
-]);
+const RTL_LANGS = new Set(["ar", "he", "fa", "ur"]);
 function isRTL(lang: string) {
   return RTL_LANGS.has(lang);
 }
@@ -18,17 +11,25 @@ interface TranscriptPanelProps {
   title: string;
   text: string;
   align?: "left" | "right";
-  textSize?: number; // is px
+  textSize?: number;
   lang?: string;
   showAudioButton?: boolean;
-  audioButtonProps?: any;
-  alignState?: { currentAlign: "left" | "right"; setCurrentAlign: (a: "left"|"right")=>void; reverseOrder: boolean; setReverseOrder: (b: boolean)=>void };
+  audioButtonProps?: {
+    text: string;
+    playing: boolean;
+    setPlaying: (v: boolean) => void;
+    lang: string;
+    onPlaybackStart?: () => void;
+    onPlaybackEnd?: () => void;
+    disabled?: boolean;
+  };
+  alignState?: {
+    currentAlign: "left" | "right";
+    setCurrentAlign: (a: "left" | "right") => void;
+    reverseOrder: boolean;
+    setReverseOrder: (b: boolean) => void;
+  };
 }
-
-const ALIGNMENTS = {
-  left: { icon: AlignLeft, cls: "justify-start text-left" },
-  right: { icon: AlignRight, cls: "justify-end text-right" }
-};
 
 const TranscriptPanel: React.FC<TranscriptPanelProps> = ({
   title,
@@ -44,20 +45,17 @@ const TranscriptPanel: React.FC<TranscriptPanelProps> = ({
   const [displayedWords, setDisplayedWords] = useState<string[]>([]);
   const [animatingWordIndexes, setAnimatingWordIndexes] = useState<number[]>([]);
   const prevTextRef = useRef<string>("");
-  const [currentAlign, setCurrentAlign] = alignState
-    ? [alignState.currentAlign, alignState.setCurrentAlign]
-    : useState<"left"|"right">(align);
-  // Track reversed ordering for RTL-style
-  const [reverseOrder, setReverseOrder] = alignState
-    ? [alignState.reverseOrder, alignState.setReverseOrder]
-    : useState(isRTL(lang));
+
+  const currentAlign = alignState ? alignState.currentAlign : align;
+  const setCurrentAlign = alignState
+    ? alignState.setCurrentAlign
+    : () => { };
+  const reverseOrder = alignState ? alignState.reverseOrder : isRTL(lang);
+  const setReverseOrder = alignState ? alignState.setReverseOrder : () => { };
 
   const handleAlignToggle = () => {
-    setCurrentAlign(a => {
-      const nextAlign = a === "left" ? "right" : "left";
-      setReverseOrder(ro => !ro);
-      return nextAlign;
-    });
+    setCurrentAlign(currentAlign === "left" ? "right" : "left");
+    setReverseOrder(!reverseOrder);
   };
 
   // Burn-in effect: only fade-in new words by opacity (no fade-up)
@@ -66,8 +64,7 @@ const TranscriptPanel: React.FC<TranscriptPanelProps> = ({
       /[\u4E00-\u9FFF\u3040-\u30FF]/.test(lang || "")
         ? text.split("")
         : text.trim().split(/\s+/).filter(Boolean);
-
-    // If the panel is in RTL mode, reverse the array for display only
+    // If RTL, reverse for display only
     if (reverseOrder) curWords = curWords.slice().reverse();
 
     let prevWords: string[] =
@@ -77,7 +74,6 @@ const TranscriptPanel: React.FC<TranscriptPanelProps> = ({
     if (reverseOrder) prevWords = prevWords.slice().reverse();
 
     let start = 0;
-    // Find where the previous and current diverge (to only fade in new words on the right side for LTR, left side for RTL)
     while (
       start < curWords.length &&
       start < prevWords.length &&
@@ -103,8 +99,36 @@ const TranscriptPanel: React.FC<TranscriptPanelProps> = ({
     }
   }, [displayedWords]);
 
-  // Icon
-  const AlIcon = currentAlign === "left" ? AlignLeft : AlignRight;
+  // Audio state
+  const [audioLoading, setAudioLoading] = useState(false);
+
+  const handleAudioPlayback = () => {
+    if (!audioButtonProps) return;
+    setAudioLoading(true);
+    audioButtonProps.setPlaying(true);
+    audioButtonProps.onPlaybackStart?.();
+    // Use browser TTS API
+    if ("speechSynthesis" in window) {
+      const utter = new window.SpeechSynthesisUtterance(audioButtonProps.text);
+      utter.lang = audioButtonProps.lang;
+      utter.onend = () => {
+        setAudioLoading(false);
+        audioButtonProps.setPlaying(false);
+        audioButtonProps.onPlaybackEnd?.();
+      };
+      utter.onerror = () => {
+        setAudioLoading(false);
+        audioButtonProps.setPlaying(false);
+        audioButtonProps.onPlaybackEnd?.();
+      };
+      window.speechSynthesis.cancel();
+      window.speechSynthesis.speak(utter);
+    } else {
+      setAudioLoading(false);
+      audioButtonProps.setPlaying(false);
+      audioButtonProps.onPlaybackEnd?.();
+    }
+  };
 
   return (
     <section
@@ -116,12 +140,14 @@ const TranscriptPanel: React.FC<TranscriptPanelProps> = ({
     >
       <div className="flex flex-row items-center w-full mb-1 justify-between">
         <h2 className="uppercase tracking-widest text-xs font-semibold text-gray-400 flex-1">{title}</h2>
-        <button className="ml-2 p-1 rounded hover:bg-accent transition"
-          aria-label="Toggle paragraph alignment"
-          onClick={handleAlignToggle}
-        >
-          <AlIcon size={18} />
-        </button>
+        <TranscriptPanelControls
+          align={currentAlign}
+          onToggleAlign={handleAlignToggle}
+          canAudioPlayback={!!(audioButtonProps && audioButtonProps.text)}
+          onAudioPlayback={handleAudioPlayback}
+          audioPlaying={!!audioButtonProps?.playing}
+          audioLoading={audioLoading}
+        />
       </div>
       <div
         ref={scrollRef}
@@ -176,7 +202,6 @@ const TranscriptPanel: React.FC<TranscriptPanelProps> = ({
                 }}
               >
                 {word}
-                {/* Add space between LTR words unless last or RTL */}
                 {(!reverseOrder && lang === "en" && i !== displayedWords.length - 1) ? " " : ""}
               </span>
             ))
@@ -189,9 +214,6 @@ const TranscriptPanel: React.FC<TranscriptPanelProps> = ({
             }
         `}</style>
       </div>
-      {showAudioButton && audioButtonProps &&
-        <AudioPlaybackButton {...audioButtonProps} />
-      }
     </section>
   );
 };

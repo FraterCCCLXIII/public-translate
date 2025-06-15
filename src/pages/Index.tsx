@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from "react";
 import TranscriptPanel from "@/components/TranscriptPanel";
 import MicButton from "@/components/MicButton";
@@ -140,7 +139,6 @@ const Index: React.FC = () => {
           </ResizablePanel>
         )}
       </ResizablePanelGroup>
-
       <TranscriptNav
         recording={recording}
         onMicClick={handleMicClick}
@@ -159,7 +157,6 @@ const Index: React.FC = () => {
         navVisible={navVisible}
         setNavVisible={setNavVisible}
       />
-
       <RecordingDot recording={recording} visible={navVisible} />
     </main>
   );

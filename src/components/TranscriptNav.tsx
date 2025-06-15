@@ -3,11 +3,12 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import MicButton from "./MicButton";
-import { Sun, Moon, Settings, Eye } from "lucide-react";
+import { Sun, Moon, Settings, Eye, Info } from "lucide-react";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@radix-ui/react-dialog";
 import { saveAs } from "file-saver";
+import AboutModal from "./AboutModal";
 
 const LANGUAGES = [
   { value: "en", label: "English", alphabet: "latin" },
@@ -152,6 +153,9 @@ const TranscriptNav: React.FC<TranscriptNavProps> = ({
     setNavVisible?.(true);
   };
 
+  // About Modal state
+  const [aboutOpen, setAboutOpen] = useState(false);
+
   // Settings modal (popover)
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [llmProvider, setLlmProvider] = useState<string>(() => localStorage.getItem("llm_provider") || "openai");
@@ -199,6 +203,8 @@ const TranscriptNav: React.FC<TranscriptNavProps> = ({
   // Responsive container and aria label for nav
   return (
     <>
+      {/* About Modal */}
+      <AboutModal open={aboutOpen} onOpenChange={setAboutOpen} />
       {/* Transcript Modal - full screen */}
       {showTranscript && (
         <Dialog open onOpenChange={setShowTranscript}>
@@ -248,6 +254,16 @@ const TranscriptNav: React.FC<TranscriptNavProps> = ({
         }}
         onMouseEnter={handleMouseEnter}
       >
+        {/* Info icon */}
+        <Button
+          variant="ghost"
+          size="icon"
+          className="mr-2"
+          aria-label="About this app"
+          onClick={() => setAboutOpen(true)}
+        >
+          <Info size={22} />
+        </Button>
         {/* Mic button moved to left */}
         <MicButton
           recording={recording}
