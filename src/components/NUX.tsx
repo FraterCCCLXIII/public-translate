@@ -3,8 +3,8 @@ import React, { useState, useEffect } from "react";
 import { Button } from "./ui/button";
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "./ui/select";
 
-const APP_NAME = "Transkriptus";
-const APP_EXPLANATION = "Transkriptus turns speech into side-by-side bilingual transcripts in real time. Set it up in seconds, and start transcribing or translating instantly.";
+const APP_NAME = "Public:Translate";
+const APP_EXPLANATION = "Public:Translate turns speech into side-by-side bilingual transcripts in real time. Set it up in seconds, and start transcribing or translating instantly.";
 
 const UI_LANGUAGES = [
   { value: "en", label: "English" },
@@ -43,7 +43,8 @@ interface NUXProps {
 }
 
 const NUX: React.FC<NUXProps> = ({ onFinish, recording }) => {
-  const browserLang = navigator.language?.slice(0,2) || "en";
+  // Detect and set initial language
+  const browserLang = navigator.language?.slice(0, 2) || "en";
   const initialLang = UI_LANGUAGES.find(l => l.value === browserLang) ? browserLang : "en";
   const [stepIdx, setStepIdx] = useState(0);
   const [lang, setLang] = useState(initialLang);
@@ -63,6 +64,7 @@ const NUX: React.FC<NUXProps> = ({ onFinish, recording }) => {
     setFade(true);
   }, [stepIdx]);
 
+  // Next button logic
   const handleNext = () => {
     setFade(false);
     setTimeout(() => {
@@ -76,11 +78,16 @@ const NUX: React.FC<NUXProps> = ({ onFinish, recording }) => {
     }, 400);
   };
 
+  // Set language on change
+  useEffect(() => {
+    localStorage.setItem("ui_language", lang);
+  }, [lang]);
+
   const step = steps[stepIdx];
 
   return (
     <div className={`fixed inset-0 z-[2000] flex flex-col items-center justify-center bg-white dark:bg-black ${fadeClass} ${fade ? "opacity-100" : "opacity-0"}`}>
-      <div className="w-full max-w-md flex flex-col items-center px-6 py-10 text-center bg-transparent">
+      <div className="w-full max-w-md flex flex-col items-center px-6 py-10 text-center">
         {step.showAppName && (
           <>
             <h1 className="font-black text-4xl mb-2 tracking-tight">{APP_NAME}</h1>
@@ -88,10 +95,10 @@ const NUX: React.FC<NUXProps> = ({ onFinish, recording }) => {
           </>
         )}
         <div className="mb-8">
-          <div className="font-bold text-2xl mb-4 animate-fade-in">{step.title}</div>
-          <p className="text-gray-600 dark:text-gray-400 mb-6 animate-fade-in">{step.content}</p>
+          <div className="font-bold text-2xl mb-4">{step.title}</div>
+          <p className="text-gray-600 dark:text-gray-400 mb-6">{step.content}</p>
           {step.component === "lang" && (
-            <Select value={lang} onValueChange={setLang}>
+            <Select value={lang} onValueChange={value => setLang(value)}>
               <SelectTrigger className="w-48 mx-auto">
                 <SelectValue aria-label="UI Language">
                   {UI_LANGUAGES.find(l => l.value === lang)?.label}
@@ -126,3 +133,4 @@ const NUX: React.FC<NUXProps> = ({ onFinish, recording }) => {
 };
 
 export default NUX;
+
