@@ -26,6 +26,7 @@ export function useVoiceRecognition() {
       lLang: string = leftLang,
       rLang: string = rightLang
     ) => {
+      console.log("[useVoiceRecognition] retranslate called", { newTranscript, lLang, rLang });
       const translation = await translate({
         text: newTranscript,
         from: lLang,
@@ -35,26 +36,35 @@ export function useVoiceRecognition() {
         transcript: newTranscript,
         translation,
       });
+      console.log("[useVoiceRecognition] retranslate result set", { transcript: newTranscript, translation });
     },
     [leftLang, rightLang, translate]
   );
 
   const start = () => {
+    console.log("[useVoiceRecognition] start called. Attempting to start recognition...", {
+      leftLang,
+      rightLang,
+      recording
+    });
     setRecording(true);
     const SpeechRecognitionCtor =
       (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (SpeechRecognitionCtor) {
       if (!recognizerRef.current || !(recognizerRef.current instanceof RealVoiceRecognizer)) {
         recognizerRef.current = new RealVoiceRecognizer();
+        console.log("[useVoiceRecognition] Using RealVoiceRecognizer.");
       }
     } else {
       if (!recognizerRef.current || !(recognizerRef.current instanceof DemoRecognizer)) {
         recognizerRef.current = new DemoRecognizer();
+        console.log("[useVoiceRecognition] Using DemoRecognizer (fallback).");
       }
     }
     try {
       recognizerRef.current.start(
         (data: TranscriptResult) => {
+          console.log("[useVoiceRecognition] Recognizer returned result", data);
           setResult(data);
         },
         leftLang,
@@ -63,15 +73,39 @@ export function useVoiceRecognition() {
       );
     } catch (e) {
       setRecording(false);
+      console.error("[useVoiceRecognition] Error starting recognition", e);
     }
   };
 
   const stop = () => {
+    console.log("[useVoiceRecognition] stop called. Stopping recognition...");
     setRecording(false);
     if (recognizerRef.current) {
       recognizerRef.current.stop();
     }
   };
+
+  // Debug - log state updates for recording & result
+  // Could be verbose in rapid update scenarios, but useful for tracing
+  // Only runs in development
+  if (process.env.NODE_ENV === "development") {
+    // Recording change
+    if (typeof window !== "undefined") {
+      window.__lastVoiceDebugRecording !== recording &&
+        console.log("[useVoiceRecognition] recording state changed:", recording);
+      window.__lastVoiceDebugRecording = recording;
+
+      // Result change
+      if (
+        !window.__lastVoiceDebugResult ||
+        window.__lastVoiceDebugResult.transcript !== result.transcript ||
+        window.__lastVoiceDebugResult.translation !== result.translation
+      ) {
+        console.log("[useVoiceRecognition] result state changed:", result);
+      }
+      window.__lastVoiceDebugResult = result;
+    }
+  }
 
   return {
     recording,
@@ -85,3 +119,4 @@ export function useVoiceRecognition() {
     retranslate,
   };
 }
+
