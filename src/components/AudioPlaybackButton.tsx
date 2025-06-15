@@ -1,9 +1,10 @@
+
 import React, { useEffect, useState, useRef } from "react";
 import { AudioLines, LoaderCircle, Settings as SettingsIcon } from "lucide-react";
 import { Popover, PopoverTrigger, PopoverContent } from "./ui/popover";
 import { Button } from "./ui/button";
 
-// List of available voices (sample), import this from a central file in real app
+// List of available voices (sample). In a real app, import from config.
 const ALL_VOICES = [
   { id: "9BWtsMINqrJLrRacOk9x", label: "Aria" },
   { id: "CwhRBWXzGAHq8TQ4Fs17", label: "Roger" },
@@ -47,9 +48,12 @@ const AudioPlaybackButton: React.FC<AudioPlaybackButtonProps> = ({
   const [loading, setLoading] = useState(false);
   const [popoverOpen, setPopoverOpen] = useState(false);
   const synthRef = useRef(window.speechSynthesis);
+  // Timer to allow delayed closing on mouse leave
+  const closeTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Start speech on click
-  const handleAudioClick = () => {
+  const handleAudioClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
     if (playing) {
       synthRef.current.cancel();
       setPlaying(false);
@@ -91,8 +95,34 @@ const AudioPlaybackButton: React.FC<AudioPlaybackButtonProps> = ({
     };
   }, []);
 
+  // Handlers for hover popover trigger
+  const handleIconMouseEnter = () => {
+    if (closeTimerRef.current) {
+      clearTimeout(closeTimerRef.current);
+      closeTimerRef.current = null;
+    }
+    setPopoverOpen(true);
+  };
+
+  const handleIconMouseLeave = () => {
+    // Only close after a short delay to allow moving to popover content
+    closeTimerRef.current = setTimeout(() => setPopoverOpen(false), 120);
+  };
+
+  const handlePopoverMouseEnter = () => {
+    if (closeTimerRef.current) {
+      clearTimeout(closeTimerRef.current);
+      closeTimerRef.current = null;
+    }
+  };
+
+  const handlePopoverMouseLeave = () => {
+    setPopoverOpen(false);
+  };
+
   return (
     <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
+      {/* Only the main playback icon triggers popover on hover */}
       <PopoverTrigger asChild>
         <button
           type="button"
@@ -101,26 +131,27 @@ const AudioPlaybackButton: React.FC<AudioPlaybackButtonProps> = ({
           disabled={disabled || !text}
           aria-label={playing ? "Stop audio playback" : "Play transcript with text-to-speech"}
           style={{ pointerEvents: disabled ? "none" : "auto" }}
+          onMouseEnter={handleIconMouseEnter}
+          onMouseLeave={handleIconMouseLeave}
         >
           {loading ? (
             <LoaderCircle className="animate-spin text-gray-500" size={24} />
           ) : (
             <AudioLines className={playing ? "text-blue-500" : "text-gray-800 dark:text-gray-200"} size={24} />
           )}
-          {/* Voice select (settings) icon, triggers the popover */}
-          <SettingsIcon
-            className="ml-1 cursor-pointer text-gray-400 hover:text-blue-500 duration-100"
-            size={16}
-            onClick={e => {
-              e.stopPropagation();
-              setPopoverOpen(true);
-            }}
-          />
         </button>
       </PopoverTrigger>
-      <PopoverContent side="top" className="w-48 max-h-56 overflow-auto custom-scrollbar">
-        <div className="font-semibold text-xs text-gray-700 mb-2 px-2">Choose Voice</div>
-        <div className="flex flex-col gap-1">
+      <PopoverContent
+        side="top"
+        className="w-48 max-h-56 overflow-auto custom-scrollbar px-0 py-2"
+        onMouseEnter={handlePopoverMouseEnter}
+        onMouseLeave={handlePopoverMouseLeave}
+        style={{ paddingLeft: 0, paddingRight: 0 }}
+      >
+        <div className="font-semibold text-xs text-gray-700 mb-2 px-3">
+          Choose Voice
+        </div>
+        <div className="flex flex-col gap-1 px-2">
           {ALL_VOICES.map((v) => (
             <Button
               key={v.id}
@@ -158,3 +189,4 @@ const AudioPlaybackButton: React.FC<AudioPlaybackButtonProps> = ({
 };
 
 export default AudioPlaybackButton;
+
