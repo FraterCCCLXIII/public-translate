@@ -35,6 +35,8 @@ interface TranscriptPanelProps {
     onPlaybackStart?: () => void;
     onPlaybackEnd?: () => void;
     disabled?: boolean;
+    selectedVoice?: string;
+    setSelectedVoice?: (voiceId: string) => void;
   };
   alignState?: {
     currentAlign: "left" | "right";
