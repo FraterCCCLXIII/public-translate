@@ -3,12 +3,16 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import MicButton from "./MicButton";
-import { Sun, Moon, Settings, Eye, Info, Maximize, Github } from "lucide-react";
+import { Sun, Moon, Settings, Eye, Info, Maximize } from "lucide-react";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@radix-ui/react-dialog";
 import { saveAs } from "file-saver";
 import AboutModal from "./AboutModal";
+import { useTranslation } from "@/hooks/useTranslation";
+
+// Dummy translation XML replacement
+const t = (key: string, defaultVal: string) => defaultVal; // Replace with real t() function
 
 const LANGUAGES = [
   { value: "en", label: "English", alphabet: "latin" },
@@ -17,6 +21,16 @@ const LANGUAGES = [
   { value: "de", label: "German", alphabet: "latin" },
   { value: "es", label: "Spanish", alphabet: "latin" },
   { value: "zh", label: "Chinese", alphabet: "han" }
+];
+
+// Add list of UI languages for the dropdown
+const UI_LANGUAGES = [
+  { value: "en", label: "English" },
+  { value: "ja", label: "日本語" },
+  { value: "fr", label: "Français" },
+  { value: "de", label: "Deutsch" },
+  { value: "es", label: "Español" },
+  { value: "zh", label: "中文" }
 ];
 
 const pxPresets = [
@@ -107,7 +121,6 @@ const TranscriptNav: React.FC<TranscriptNavProps> = ({
   navVisible = true,
   setNavVisible,
 }) => {
-  // Theme toggle
   const [darkMode, setDarkMode] = React.useState(() =>
     document.documentElement.classList.contains("dark")
   );
@@ -156,8 +169,11 @@ const TranscriptNav: React.FC<TranscriptNavProps> = ({
   // About Modal state
   const [aboutOpen, setAboutOpen] = useState(false);
 
-  // Settings modal (popover)
+  // Settings & language picker state
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [uiLanguage, setUiLanguage] = useState<string>(() => localStorage.getItem("ui_language") || "en");
+
+  // Settings modal (popover)
   const [llmProvider, setLlmProvider] = useState<string>(() => localStorage.getItem("llm_provider") || "openai");
   const [openaiKey, setOpenaiKey] = useState<string>(() => localStorage.getItem("openai_api_key") || "");
   const [claudeKey, setClaudeKey] = useState<string>(() => localStorage.getItem("claude_api_key") || "");
@@ -209,7 +225,12 @@ const TranscriptNav: React.FC<TranscriptNavProps> = ({
     }
   };
 
-  // Responsive container and aria label for nav
+  useEffect(() => {
+    // Save selected UI language to localStorage
+    localStorage.setItem("ui_language", uiLanguage);
+    // TODO: wire in setI18nLanguage(uiLanguage) or similar as needed
+  }, [uiLanguage]);
+
   return (
     <>
       {/* About Modal */}
@@ -263,74 +284,94 @@ const TranscriptNav: React.FC<TranscriptNavProps> = ({
         }}
         onMouseEnter={handleMouseEnter}
       >
-        {/* Mic button moved to left */}
-        <MicButton
-          recording={recording}
-          onClick={onMicClick}
-        />
+        {/* Mic button with label popover */}
+        <Popover>
+          <PopoverTrigger asChild>
+            <div>
+              <MicButton
+                recording={recording}
+                onClick={onMicClick}
+                aria-label={t("mic_button", "Start or stop recording")}
+              />
+            </div>
+          </PopoverTrigger>
+          <PopoverContent className="w-40 text-sm">
+            <span>{t("mic_button_label", "Start or stop recording")}</span>
+          </PopoverContent>
+        </Popover>
 
-        {/* Left Language Select */}
-        <div className="relative flex items-center w-28">
-          <Select value={leftLang} onValueChange={(val) => {
-            setLeftLang(val); // triggers re-translation in Index
-          }}>
-            <SelectTrigger className="w-28">
-              <SelectValue aria-label="From language">
-                {LANGUAGES.find(l=>l.value===leftLang)?.label || leftLang}
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent>
-              {LANGUAGES.map(lang => (
-                <SelectItem key={lang.value} value={lang.value}>{lang.label}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          {/* Eye icon for panel show/hide */}
-          <Button
-            variant="ghost"
-            size="icon"
-            aria-label="Show/hide left"
-            className="ml-1"
-            onClick={() => setLeftVisible(!leftVisible)}
-            tabIndex={-1}
-          >
-            <Eye size={18} className={`${leftVisible ? "opacity-100" : "opacity-30"}`} />
-          </Button>
-        </div>
+        {/* Left Language Select with label popover */}
+        <Popover>
+          <PopoverTrigger asChild>
+            <div className="relative flex items-center w-28">
+              <Select value={leftLang} onValueChange={setLeftLang}>
+                <SelectTrigger className="w-28" aria-label={t("from_language", "From language")}>
+                  <SelectValue aria-label="From language">
+                    {LANGUAGES.find(l=>l.value===leftLang)?.label || leftLang}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {LANGUAGES.map(lang => (
+                    <SelectItem key={lang.value} value={lang.value}>{lang.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label={t("hide_left_panel", "Show or hide left panel")}
+                className="ml-1"
+                onClick={() => setLeftVisible(!leftVisible)}
+                tabIndex={-1}
+              >
+                <Eye size={18} className={`${leftVisible ? "opacity-100" : "opacity-30"}`} />
+              </Button>
+            </div>
+          </PopoverTrigger>
+          <PopoverContent className="w-48">
+            <span>{t("from_language_help", "Primary recording/input language")}</span>
+          </PopoverContent>
+        </Popover>
         <span className="text-xs text-gray-400">→</span>
-        {/* Right Language Select */}
-        <div className="relative flex items-center w-28">
-          <Select value={rightLang} onValueChange={(val) => {
-            setRightLang(val); // triggers re-translation in Index
-          }}>
-            <SelectTrigger className="w-28">
-              <SelectValue aria-label="To language">
-                {LANGUAGES.find(l=>l.value===rightLang)?.label || rightLang}
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent>
-              {LANGUAGES.map(lang => (
-                <SelectItem key={lang.value} value={lang.value}>{lang.label}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Button
-            variant="ghost"
-            size="icon"
-            aria-label="Show/hide right"
-            className="ml-1"
-            onClick={() => setRightVisible(!rightVisible)}
-            tabIndex={-1}
-          >
-            <Eye size={18} className={`${rightVisible ? "opacity-100" : "opacity-30"}`} />
-          </Button>
-        </div>
-
-        {/* Font Size (px) Slider */}
+        {/* Right Language Select with label popover */}
+        <Popover>
+          <PopoverTrigger asChild>
+            <div className="relative flex items-center w-28">
+              <Select value={rightLang} onValueChange={setRightLang}>
+                <SelectTrigger className="w-28" aria-label={t("to_language", "To language")}>
+                  <SelectValue aria-label="To language">
+                    {LANGUAGES.find(l=>l.value===rightLang)?.label || rightLang}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {LANGUAGES.map(lang => (
+                    <SelectItem key={lang.value} value={lang.value}>{lang.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label={t("hide_right_panel", "Show or hide right panel")}
+                className="ml-1"
+                onClick={() => setRightVisible(!rightVisible)}
+                tabIndex={-1}
+              >
+                <Eye size={18} className={`${rightVisible ? "opacity-100" : "opacity-30"}`} />
+              </Button>
+            </div>
+          </PopoverTrigger>
+          <PopoverContent className="w-48">
+            <span>{t("to_language_help", "Translation/output language")}</span>
+          </PopoverContent>
+        </Popover>
+        
+        {/* Font size with label popover */}
         <Popover open={showFontSize} onOpenChange={setShowFontSize}>
           <PopoverTrigger asChild>
             <div
               className="flex items-center gap-2 ml-2 cursor-pointer select-none"
+              aria-label={t("font_size", "Text font size")}
               onMouseEnter={() => setShowFontSize(true)}
               onMouseLeave={() => setShowFontSize(false)}
             >
@@ -342,44 +383,60 @@ const TranscriptNav: React.FC<TranscriptNavProps> = ({
                 value={[textSize]}
                 onValueChange={([value]) => setTextSize(value)}
                 className="w-32"
-                aria-label="Text Size"
+                aria-label={t("font_size_slider", "Text Size slider")}
               />
               <span className="text-base font-bold text-gray-700" style={{ fontSize: '1.25em' }}>A</span>
             </div>
           </PopoverTrigger>
-          <PopoverContent className="w-24 flex justify-center">
+          <PopoverContent className="w-32 flex flex-col items-center">
             <span className="font-mono text-lg">{textSize}px</span>
+            <span className="text-xs mt-1">{t("font_size_help", "Adjust the display text size")}</span>
           </PopoverContent>
         </Popover>
 
-        {/* Theme Switch */}
-        <div className="flex items-center gap-1 ml-2">
-          <Sun size={18} />
-          <Switch
-            checked={darkMode}
-            onCheckedChange={() => setDarkMode((v) => !v)}
-            aria-label="Toggle dark mode"
-          />
-          <Moon size={18} />
-        </div>
+        {/* Theme Switch with label popover */}
+        <Popover>
+          <PopoverTrigger asChild>
+            <div className="flex items-center gap-1 ml-2" aria-label={t("theme_toggle", "Theme toggle")}>
+              <Sun size={18} />
+              <Switch
+                checked={darkMode}
+                onCheckedChange={() => setDarkMode((v) => !v)}
+                aria-label={t("toggle_dark_mode", "Toggle dark mode")}
+              />
+              <Moon size={18} />
+            </div>
+          </PopoverTrigger>
+          <PopoverContent className="w-48">
+            <span>{t("theme_toggle_help", "Switch between light and dark mode")}</span>
+          </PopoverContent>
+        </Popover>
 
-        {/* Transcript Modal Button */}
-        <Button
-          variant="outline"
-          className="ml-2"
-          onClick={() => setShowTranscript(true)}
-        >
-          Transcript
-        </Button>
+        {/* Transcript Button with label popover */}
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              className="ml-2"
+              onClick={() => setShowTranscript(true)}
+              aria-label={t("view_full_transcript", "View full transcript")}
+            >
+              {t("transcript", "Transcript")}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-48">
+            <span>{t("transcript_help", "Open and download the full transcript history")}</span>
+          </PopoverContent>
+        </Popover>
 
-        {/* Settings icon */}
+        {/* Settings icon with popover and language dropdown */}
         <Popover open={settingsOpen} onOpenChange={setSettingsOpen}>
           <PopoverTrigger asChild>
             <Button
               size="icon"
               variant="ghost"
               className="ml-2"
-              aria-label="Settings"
+              aria-label={t("settings", "Settings")}
             >
               <Settings size={22} />
             </Button>
@@ -514,31 +571,59 @@ const TranscriptNav: React.FC<TranscriptNavProps> = ({
                 </>
               )}
               <Button onClick={saveSettings} className="w-full" variant="default">Save</Button>
+              {/* Language selection at bottom */}
+              <div>
+                <label className="font-bold text-xs text-gray-700">{t("ui_language", "UI Language")}</label>
+                <select
+                  value={uiLanguage}
+                  className="w-full mt-1 border rounded px-2 py-1 bg-background"
+                  onChange={e => setUiLanguage(e.target.value)}
+                >
+                  {UI_LANGUAGES.map(o => (
+                    <option key={o.value} value={o.value}>{o.label}</option>
+                  ))}
+                </select>
+                <span className="text-xs text-gray-400">{t("ui_language_help", "Sets the user interface language")}</span>
+              </div>
             </div>
           </PopoverContent>
         </Popover>
 
-        {/* Info icon - now just right of settings icon */}
-        <Button
-          variant="ghost"
-          size="icon"
-          className="ml-1"
-          aria-label="About this app"
-          onClick={() => setAboutOpen(true)}
-        >
-          <Info size={22} />
-        </Button>
+        {/* Info icon with label popover */}
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="ml-1"
+              aria-label={t("about_app", "About this app")}
+              onClick={() => setAboutOpen(true)}
+            >
+              <Info size={22} />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-40">
+            <span>{t("about_help", "Learn about this app and credits")}</span>
+          </PopoverContent>
+        </Popover>
 
-        {/* Maximize screen icon, far right */}
-        <Button
-          variant="ghost"
-          size="icon"
-          className="ml-2"
-          aria-label="Fullscreen"
-          onClick={handleMaximize}
-        >
-          <Maximize size={22} />
-        </Button>
+        {/* Maximize/fullscreen with popover */}
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="ml-2"
+              aria-label={t("fullscreen", "Fullscreen")}
+              onClick={handleMaximize}
+            >
+              <Maximize size={22} />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-40">
+            <span>{t("fullscreen_help", "Toggle fullscreen mode")}</span>
+          </PopoverContent>
+        </Popover>
       </nav>
     </>
   );
