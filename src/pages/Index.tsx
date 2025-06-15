@@ -1,3 +1,4 @@
+
 import React, { useState, useRef } from "react";
 import TranscriptPanel from "@/components/TranscriptPanel";
 import MicButton from "@/components/MicButton";
@@ -42,8 +43,7 @@ const Index: React.FC = () => {
   } = useVoiceRecognition();
 
   const [textSize, setTextSize] = useState(80);
-  const [leftLang, setLeftLang] = useState(LANG_DEFAULTS.left);
-  const [rightLang, setRightLang] = useState(LANG_DEFAULTS.right);
+  // Removed duplicate leftLang, setLeftLang, rightLang, setRightLang declarations
   const [leftVisible, setLeftVisible] = useState(true);
   const [rightVisible, setRightVisible] = useState(true);
 
@@ -247,3 +247,4 @@ const Index: React.FC = () => {
 };
 
 export default Index;
+
