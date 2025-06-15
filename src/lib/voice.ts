@@ -1,17 +1,13 @@
 
 /**
- * Placeholder logic for recording audio and getting text+translation.
- * Replace methods here with integration to real APIs (e.g. Web Speech API, OpenAI, Google, etc).
+ * Microphone recording and voice-to-text: fallback to demo if Web Speech API not present.
  */
-
 export interface TranscriptResult {
   transcript: string;
   translation: string;
 }
-
 type Callback = (result: TranscriptResult) => void;
 
-// This simulates streaming recognition (for UI dev).
 const demoEnglish = [
   "Hello, my name is John.",
   "I am demonstrating how this voice-to-text app works.",
@@ -25,10 +21,9 @@ const demoJapanese = [
   "使ってくれてありがとう！",
 ];
 
-export class VoiceRecognizer {
+class DemoRecognizer {
   private _timer: any = null;
   private i = 0;
-
   start(onResult: Callback) {
     this.i = 0;
     this.stop();
@@ -44,7 +39,6 @@ export class VoiceRecognizer {
       }
     }, 1400);
   }
-
   stop() {
     if (this._timer) {
       clearInterval(this._timer);
@@ -53,10 +47,56 @@ export class VoiceRecognizer {
   }
 }
 
-// Hook for managing voice recognizer. In the real app, replace logic!
+// Real Voice Recognition via browser
+class RealVoiceRecognizer {
+  private recognition: any;
+  private active = false;
+  private interim = "";
+  private transcript = "";
+  private onResult: Callback = () => {};
+
+  start(onResult: Callback) {
+    this.transcript = "";
+    this.active = true;
+    this.onResult = onResult;
+    // @ts-ignore
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) throw new Error("Web Speech API not available");
+    this.recognition = new SpeechRecognition();
+    this.recognition.interimResults = true;
+    this.recognition.lang = "en-US";
+    this.recognition.continuous = true;
+    this.recognition.onresult = (event: any) => {
+      let finalTranscript = "";
+      for (let i = event.resultIndex; i < event.results.length; ++i) {
+        if (event.results[i].isFinal) {
+          finalTranscript += event.results[i][0].transcript;
+        }
+      }
+      this.transcript = (this.transcript + " " + finalTranscript).trim();
+      // For demo, fake translation
+      this.onResult({
+        transcript: this.transcript,
+        translation: "（日本語訳のデモ: " + this.transcript + "）",
+      });
+    };
+    this.recognition.onerror = () => {};
+    this.recognition.onend = () => {
+      this.active = false;
+    };
+    this.recognition.start();
+  }
+  stop() {
+    if (this.recognition && this.active) {
+      this.recognition.stop();
+    }
+    this.active = false;
+  }
+}
+
 import { useRef, useState } from "react";
 export function useVoiceRecognition() {
-  const recognizerRef = useRef<VoiceRecognizer | null>(null);
+  const recognizerRef = useRef<any>(null);
   const [recording, setRecording] = useState(false);
   const [result, setResult] = useState<TranscriptResult>({
     transcript: "",
@@ -65,8 +105,16 @@ export function useVoiceRecognition() {
 
   const start = () => {
     setRecording(true);
-    if (!recognizerRef.current) recognizerRef.current = new VoiceRecognizer();
-    recognizerRef.current.start((data) => setResult(data));
+    if (window.SpeechRecognition || window.webkitSpeechRecognition) {
+      if (!recognizerRef.current || !(recognizerRef.current instanceof RealVoiceRecognizer)) {
+        recognizerRef.current = new RealVoiceRecognizer();
+      }
+    } else {
+      if (!recognizerRef.current || !(recognizerRef.current instanceof DemoRecognizer)) {
+        recognizerRef.current = new DemoRecognizer();
+      }
+    }
+    recognizerRef.current.start((data: TranscriptResult) => setResult(data));
   };
 
   const stop = () => {

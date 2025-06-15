@@ -101,3 +101,35 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Minimalist custom scrollbar: transparent unless hover; visible track on hover. */
+::-webkit-scrollbar {
+  width: 8px;
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: transparent;
+  transition: background 0.2s;
+  border-radius: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scrollbar-thin:hover::-webkit-scrollbar-thumb {
+  background: #bbbbbb99;
+}
+.scrollbar-thin:hover::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* For Firefox */
+.scrollbar-thin {
+  scrollbar-color: transparent transparent;
+}
+.scrollbar-thin:hover {
+  scrollbar-color: #bbbbbb99 transparent;
+}
+
+html, body, #root {
+  height: 100%;
+}

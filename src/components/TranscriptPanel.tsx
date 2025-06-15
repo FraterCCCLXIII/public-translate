@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef } from "react";
 
 interface TranscriptPanelProps {
@@ -15,13 +14,11 @@ const TranscriptPanel: React.FC<TranscriptPanelProps> = ({
   textSize = 7,
 }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
-  const prevText = useRef<string>("");
 
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-    prevText.current = text;
   }, [text]);
 
   return (
@@ -38,25 +35,26 @@ const TranscriptPanel: React.FC<TranscriptPanelProps> = ({
           flex-1 w-full bg-white dark:bg-background text-black dark:text-white
           rounded
           overflow-y-auto
+          scrollbar-thin
           transition-colors
-          scrollbar-thin scrollbar-thumb-gray-200 dark:scrollbar-thumb-gray-700
         `}
         style={{
           minHeight: "3em",
-          maxHeight: "50vh",
+          maxHeight: "100vh",
         }}
       >
         <span
-          key={text} // triggers new animation for each change
+          key={text}
           className={`
-            block transition-opacity duration-700 opacity-0 animate-fadein
+            block animate-fade-in
             ${align === "left" ? "text-left" : "text-right"}
             font-black leading-tight p-2
             text-${textSize}xl
+            opacity-100
+            transition-opacity
           `}
           style={{
-            animation: "fadein 1.1s forwards",
-            display: "inline-block",
+            animation: "fade-in 1.2s forwards",
             wordBreak: "break-word",
             lineHeight: 1.14,
             minHeight: "2em"
@@ -65,9 +63,9 @@ const TranscriptPanel: React.FC<TranscriptPanelProps> = ({
           {text || <span className="text-gray-300">...</span>}
         </span>
         <style>{`
-            @keyframes fadein {
-              from { opacity: 0 }
-              to { opacity: 1 }
+            @keyframes fade-in {
+              0% { opacity: 0; transform: translateY(10px);}
+              100% { opacity: 1; transform: none;}
             }
         `}</style>
       </div>
@@ -76,4 +74,3 @@ const TranscriptPanel: React.FC<TranscriptPanelProps> = ({
 };
 
 export default TranscriptPanel;
-
