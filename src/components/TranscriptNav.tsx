@@ -1,10 +1,12 @@
+
 import React, { useEffect, useRef, useState } from "react";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import MicButton from "./MicButton";
 import { Sun, Moon, Settings, Eye, Info, Maximize } from "lucide-react";
-import { page } from "lucide-react"; // FIXED: import the lowercase 'page'
+// FIX: import icons and use icons.page for the page icon node
+import { icons } from "lucide-react";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@radix-ui/react-dialog";
@@ -107,12 +109,11 @@ interface TranscriptNavProps {
 
 // Small render helper for Lucide iconNode icon
 function PageIcon(props: React.SVGProps<SVGSVGElement>) {
-  // Lucide exports the icon node as [string, props][]
-  // We replicate the internal structure for rendering:
+  // Use icons.page for the iconNode
   return React.createElement(
     "svg",
     { width: 20, height: 20, fill: "none", stroke: "currentColor", ...props, viewBox: "0 0 24 24" },
-    page[1].map(([tag, attrs], i) =>
+    icons.page[1].map(([tag, attrs]: [string, any], i: number) =>
       React.createElement(tag, { key: i, ...attrs })
     )
   );
