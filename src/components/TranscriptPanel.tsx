@@ -1,17 +1,24 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import TranscriptPanelControls from "./TranscriptPanelControls";
+import { Slider } from "./ui/slider";
 
 const RTL_LANGS = new Set(["ar", "he", "fa", "ur"]);
 function isRTL(lang: string) {
   return RTL_LANGS.has(lang);
 }
 
+interface TranscriptWord {
+  text: string;
+  timestamp?: string;
+}
+
 interface TranscriptPanelProps {
   title: string;
-  text: string;
+  text: string | TranscriptWord[];
   align?: "left" | "right";
   textSize?: number;
+  setTextSize?: (value: number) => void;
   lang?: string;
   showAudioButton?: boolean;
   audioButtonProps?: {
@@ -36,37 +43,43 @@ const TranscriptPanel: React.FC<TranscriptPanelProps> = ({
   text,
   align = "left",
   textSize = 80,
+  setTextSize,
   lang = "en",
   showAudioButton,
   audioButtonProps,
   alignState,
 }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
-  const [displayedWords, setDisplayedWords] = useState<string[]>([]);
+  const [displayedWords, setDisplayedWords] = useState<TranscriptWord[]>([]);
   const [animatingWordIndexes, setAnimatingWordIndexes] = useState<number[]>([]);
   const prevTextRef = useRef<string>("");
 
   const currentAlign = alignState ? alignState.currentAlign : align;
   const setCurrentAlign = alignState
     ? alignState.setCurrentAlign
-    : () => { };
+    : () => {};
   const reverseOrder = alignState ? alignState.reverseOrder : isRTL(lang);
-  const setReverseOrder = alignState ? alignState.setReverseOrder : () => { };
+  const setReverseOrder = alignState ? alignState.setReverseOrder : () => {};
 
   const handleAlignToggle = () => {
     setCurrentAlign(currentAlign === "left" ? "right" : "left");
     setReverseOrder(!reverseOrder);
   };
 
-  // Burn-in effect: only fade-in new words by opacity (no fade-up)
+  // Accept both string and array input
   useEffect(() => {
-    let curWords: string[] =
-      /[\u4E00-\u9FFF\u3040-\u30FF]/.test(lang || "")
-        ? text.split("")
-        : text.trim().split(/\s+/).filter(Boolean);
+    let curWords: TranscriptWord[] =
+      Array.isArray(text)
+        ? [...text]
+        : (
+            /[\u4E00-\u9FFF\u3040-\u30FF]/.test(lang || "")
+              ? text.split("").map(t => ({ text: t }))
+              : text.trim().split(/\s+/).filter(Boolean).map(t => ({ text: t }))
+          );
     // If RTL, reverse for display only
     if (reverseOrder) curWords = curWords.slice().reverse();
 
+    // Previous text as string, just for animation
     let prevWords: string[] =
       /[\u4E00-\u9FFF\u3040-\u30FF]/.test(lang || "")
         ? prevTextRef.current.split("")
@@ -77,7 +90,7 @@ const TranscriptPanel: React.FC<TranscriptPanelProps> = ({
     while (
       start < curWords.length &&
       start < prevWords.length &&
-      curWords[start] === prevWords[start]
+      curWords[start].text === prevWords[start]
     ) {
       start++;
     }
@@ -90,7 +103,9 @@ const TranscriptPanel: React.FC<TranscriptPanelProps> = ({
     } else {
       setAnimatingWordIndexes([]);
     }
-    prevTextRef.current = text;
+    prevTextRef.current = Array.isArray(text)
+      ? text.map(w => w.text).join(" ")
+      : text;
   }, [text, lang, reverseOrder]);
 
   useEffect(() => {
@@ -138,6 +153,22 @@ const TranscriptPanel: React.FC<TranscriptPanelProps> = ({
         relative
       `}
     >
+      {/* NEW: Per-panel text size slider at the top */}
+      {setTextSize && (
+        <div className="flex items-center gap-2 mb-2 w-full">
+          <span className="text-xs text-gray-500">A</span>
+          <Slider
+            min={32}
+            max={128}
+            step={1}
+            value={[textSize]}
+            onValueChange={([value]) => setTextSize(value)}
+            className="w-32"
+            aria-label="Font Size"
+          />
+          <span className="text-base font-bold text-gray-700" style={{ fontSize: '1.25em' }}>A</span>
+        </div>
+      )}
       <div className="flex flex-row items-center w-full mb-1 justify-between">
         <h2 className="uppercase tracking-widest text-xs font-semibold text-gray-400 flex-1">{title}</h2>
         <TranscriptPanelControls
@@ -184,10 +215,10 @@ const TranscriptPanel: React.FC<TranscriptPanelProps> = ({
           {displayedWords.length === 0 ? (
             <span className="text-gray-300">...</span>
           ) : (
-            displayedWords.map((word, i) => (
+            displayedWords.map((wordObj, i) => (
               <span
-                key={i + ":" + word}
-                className={`inline-block align-top
+                key={i + ":" + wordObj.text}
+                className={`inline-block align-top relative
                   ${animatingWordIndexes.includes(i) ? "fade-in-word" : ""}
                 `}
                 style={{
@@ -201,7 +232,13 @@ const TranscriptPanel: React.FC<TranscriptPanelProps> = ({
                       : undefined,
                 }}
               >
-                {word}
+                {/* Render timestamp if present */}
+                {wordObj.timestamp && (
+                  <span className="absolute left-0 top-[-1.2em] text-xs text-gray-400" style={{ fontSize: "0.38em" }}>
+                    [{wordObj.timestamp}]
+                  </span>
+                )}
+                {wordObj.text}
                 {(!reverseOrder && lang === "en" && i !== displayedWords.length - 1) ? " " : ""}
               </span>
             ))
@@ -219,3 +256,4 @@ const TranscriptPanel: React.FC<TranscriptPanelProps> = ({
 };
 
 export default TranscriptPanel;
+

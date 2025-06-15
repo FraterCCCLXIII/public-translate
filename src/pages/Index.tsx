@@ -2,6 +2,21 @@
 import React, { useState, useEffect } from "react";
 import TranscriptNav from "@/components/TranscriptNav";
 import NUX from "@/components/NUX";
+import TranscriptPanel from "@/components/TranscriptPanel";
+
+// Temporary dummy transcript with timestamps for demo
+const transcriptData = [
+  { text: "Hello", timestamp: "00:00:01" },
+  { text: "world!", timestamp: "00:00:02" },
+  { text: "How", timestamp: "00:00:03" },
+  { text: "are", timestamp: "00:00:03" },
+  { text: "you?", timestamp: "00:00:04" },
+];
+const translationData = [
+  { text: "こんにちは", timestamp: "00:00:01" },
+  { text: "世界！", timestamp: "00:00:02" },
+  { text: "元気ですか？", timestamp: "00:00:04" },
+];
 
 const Index = () => {
   // Get recording status, and control state for NUX
@@ -11,6 +26,16 @@ const Index = () => {
   const [showNUX, setShowNUX] = useState(() => {
     return localStorage.getItem("nux_complete") !== "1";
   });
+
+  // Per-panel text size state
+  const [leftTextSize, setLeftTextSize] = useState(40);
+  const [rightTextSize, setRightTextSize] = useState(40);
+
+  // Example language/visibility state for left/right panels
+  const [leftLang, setLeftLang] = useState("en");
+  const [rightLang, setRightLang] = useState("ja");
+  const [leftVisible, setLeftVisible] = useState(true);
+  const [rightVisible, setRightVisible] = useState(true);
 
   // When NUX finishes, mark complete and hide
   const handleNUXFinish = () => {
@@ -45,22 +70,50 @@ const Index = () => {
         <TranscriptNav
           recording={recording}
           onMicClick={handleMicClick}
-          textSize={40}
-          setTextSize={() => {}}
-          leftLang="en"
-          rightLang="ja"
-          setLeftLang={() => {}}
-          setRightLang={() => {}}
-          leftVisible={true}
-          rightVisible={true}
-          setLeftVisible={() => {}}
-          setRightVisible={() => {}}
-          transcript=""
-          translation=""
+          textSize={40} // unused, legacy prop
+          setTextSize={() => {}} // unused, legacy prop
+          leftLang={leftLang}
+          rightLang={rightLang}
+          setLeftLang={setLeftLang}
+          setRightLang={setRightLang}
+          leftVisible={leftVisible}
+          rightVisible={rightVisible}
+          setLeftVisible={setLeftVisible}
+          setRightVisible={setRightVisible}
+          transcript={""}
+          translation={""}
         />
+        {/* Render transcript panels as main content */}
+        <div className="flex flex-row gap-4 w-full max-w-6xl mx-auto mt-6">
+          {leftVisible && (
+            <div className="flex-1 min-w-0">
+              <TranscriptPanel
+                title="Transcript"
+                text={transcriptData}
+                align="left"
+                textSize={leftTextSize}
+                setTextSize={setLeftTextSize}
+                lang={leftLang}
+              />
+            </div>
+          )}
+          {rightVisible && (
+            <div className="flex-1 min-w-0">
+              <TranscriptPanel
+                title="Translation"
+                text={translationData}
+                align="right"
+                textSize={rightTextSize}
+                setTextSize={setRightTextSize}
+                lang={rightLang}
+              />
+            </div>
+          )}
+        </div>
       </div>
     </>
   );
 };
 
 export default Index;
+

@@ -3,7 +3,7 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import MicButton from "./MicButton";
-import { Sun, Moon, Settings, Eye, Info, Maximize } from "lucide-react";
+import { Sun, Moon, Settings, Eye, Info, Maximize, Page } from "lucide-react";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@radix-ui/react-dialog";
@@ -376,49 +376,6 @@ const TranscriptNavInner: React.FC<TranscriptNavProps> = ({
           </TooltipContent>
         </Tooltip>
         
-        {/* Font size with tooltip */}
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <div
-              className="flex items-center gap-2 ml-2 cursor-pointer select-none"
-              aria-label={t("font_size")}
-            >
-              <span className="text-xs text-gray-500">A</span>
-              <Slider
-                min={32}
-                max={128}
-                step={1}
-                value={[textSize]}
-                onValueChange={([value]) => setTextSize(value)}
-                className="w-32"
-                aria-label={t("font_size_slider")}
-              />
-              <span className="text-base font-bold text-gray-700" style={{ fontSize: '1.25em' }}>A</span>
-            </div>
-          </TooltipTrigger>
-          <TooltipContent side="top" className="rounded-full px-3 py-1 text-xs font-medium bg-neutral-800 text-white shadow-pill">
-            {t("font_size_help")}
-          </TooltipContent>
-        </Tooltip>
-
-        {/* Theme Switch with tooltip */}
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <div className="flex items-center gap-1 ml-2" aria-label={t("theme_toggle")}>
-              <Sun size={18} />
-              <Switch
-                checked={darkMode}
-                onCheckedChange={() => setDarkMode((v) => !v)}
-                aria-label={t("toggle_dark_mode")}
-              />
-              <Moon size={18} />
-            </div>
-          </TooltipTrigger>
-          <TooltipContent side="top" className="rounded-full px-3 py-1 text-xs font-medium bg-neutral-800 text-white shadow-pill">
-            {t("theme_toggle_help")}
-          </TooltipContent>
-        </Tooltip>
-
         {/* Transcript Button with tooltip */}
         <Tooltip>
           <TooltipTrigger asChild>
@@ -428,7 +385,7 @@ const TranscriptNavInner: React.FC<TranscriptNavProps> = ({
               onClick={() => setShowTranscript(true)}
               aria-label={t("view_full_transcript")}
             >
-              {t("transcript")}
+              <Page size={20} />
             </Button>
           </TooltipTrigger>
           <TooltipContent side="top" className="rounded-full px-3 py-1 text-xs font-medium bg-neutral-800 text-white shadow-pill">
