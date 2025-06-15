@@ -10,6 +10,14 @@ import {
   ResizableHandle,
 } from "@/components/ui/resizable";
 
+// Small red dot for recording indicator
+const RecordingDot = ({ recording, visible }: {recording: boolean, visible: boolean}) =>
+  recording && !visible ? (
+    <div className="fixed left-4 bottom-4 z-50">
+      <span className="block w-3 h-3 rounded-full bg-red-600 shadow-lg animate-pulse" aria-label="Recording indicator" />
+    </div>
+  ) : null;
+
 const LANG_DEFAULTS = {
   left: "en",
   right: "ja",
@@ -25,6 +33,8 @@ const Index: React.FC = () => {
 
   // Hide handle state on hover
   const [handleHovered, setHandleHovered] = useState(false);
+  // Bottom nav visible
+  const [navVisible, setNavVisible] = useState(true);
 
   return (
     <main className="relative w-full min-h-screen bg-white dark:bg-background flex flex-col items-center justify-center p-0 h-screen">
@@ -49,9 +59,7 @@ const Index: React.FC = () => {
             className={`transition-colors bg-transparent data-[panel-group-direction=horizontal]:w-2`}
             onMouseEnter={() => setHandleHovered(true)}
             onMouseLeave={() => setHandleHovered(false)}
-          >
-            {/* Line grip handled in ResizableHandle (UI file) */}
-          </ResizableHandle>
+          />
         )}
         {rightVisible && (
           <ResizablePanel minSize={20} id="right" order={2}>
@@ -81,7 +89,11 @@ const Index: React.FC = () => {
         setRightVisible={setRightVisible}
         transcript={result.transcript}
         translation={result.translation}
+        navVisible={navVisible}
+        setNavVisible={setNavVisible}
       />
+
+      <RecordingDot recording={recording} visible={navVisible} />
     </main>
   );
 };

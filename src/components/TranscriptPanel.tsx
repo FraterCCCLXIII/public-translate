@@ -2,6 +2,17 @@
 import React, { useEffect, useRef, useState } from "react";
 import { AlignLeft, AlignRight } from "lucide-react";
 
+// Utility function to check if language should use RTL order.
+const RTL_LANGS = new Set([
+  "ar", // Arabic
+  "he", // Hebrew
+  "fa", // Farsi/Persian
+  "ur", // Urdu
+]);
+function isRTL(lang: string) {
+  return RTL_LANGS.has(lang);
+}
+
 interface TranscriptPanelProps {
   title: string;
   text: string;
@@ -24,31 +35,58 @@ const TranscriptPanel: React.FC<TranscriptPanelProps> = ({
 }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [displayedWords, setDisplayedWords] = useState<string[]>([]);
-  const [animatingWords, setAnimatingWords] = useState<number[]>([]);
+  const [animatingWordIndexes, setAnimatingWordIndexes] = useState<number[]>([]);
   const prevTextRef = useRef<string>("");
   const [currentAlign, setCurrentAlign] = useState<"left"|"right">(align);
+  // Track reversed ordering for RTL-style
+  const [reverseOrder, setReverseOrder] = useState(isRTL(lang));
 
-  // Burn-in effect: only fade-in new words by opacity
+  // Change order logic on alignment click
+  const handleAlignToggle = () => {
+    setCurrentAlign(a => (a === "left" ? "right" : "left"));
+    setReverseOrder(ro => !ro);
+  };
+
+  // Burn-in effect: only fade-in new words by opacity (not fade-up)
   useEffect(() => {
-    const curWords = text.split(/\s+/).filter(Boolean);
-    const prevWords = prevTextRef.current.split(/\s+/).filter(Boolean);
+    // Split to words (for CJK/kana/han, fallback to normal split)
+    let curWords: string[] =
+      /[\u4E00-\u9FFF\u3040-\u30FF]/.test(lang || "")
+        ? text.split("")
+        : text.split(/\s+/).filter(Boolean);
+
+    // If the panel is in RTL mode, reverse the array for display only
+    if (reverseOrder) curWords = curWords.slice().reverse();
+
+    let prevWords: string[] =
+      /[\u4E00-\u9FFF\u3040-\u30FF]/.test(lang || "")
+        ? prevTextRef.current.split("")
+        : prevTextRef.current.split(/\s+/).filter(Boolean);
+    if (reverseOrder) prevWords = prevWords.slice().reverse();
 
     let start = 0;
-    while (start < curWords.length && curWords[start] === prevWords[start]) {
+    // Find where the previous and current diverge (to only fade in new words on the right side for LTR, left side for RTL)
+    while (
+      start < curWords.length &&
+      start < prevWords.length &&
+      curWords[start] === prevWords[start]
+    ) {
       start++;
     }
     setDisplayedWords(curWords);
     if (curWords.length > prevWords.length) {
-      // Animate in the new words (added at end)
+      // Animate only the new words (from start onward)
       const newIndexes = [];
       for (let i = start; i < curWords.length; ++i) newIndexes.push(i);
-      setAnimatingWords(newIndexes);
-      setTimeout(() => setAnimatingWords([]), 1200); // match fade-in duration
+      setAnimatingWordIndexes(newIndexes);
+      setTimeout(() => setAnimatingWordIndexes([]), 1200);
     } else {
-      setAnimatingWords([]);
+      setAnimatingWordIndexes([]);
     }
     prevTextRef.current = text;
-  }, [text]);
+    // eslint-disable-next-line
+    // depends on text, lang, reverseOrder
+  }, [text, lang, reverseOrder]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -56,7 +94,7 @@ const TranscriptPanel: React.FC<TranscriptPanelProps> = ({
     }
   }, [displayedWords]);
 
-  // Toggle alignment (clickable icon)
+  // Icon
   const AlIcon = currentAlign === "left" ? AlignLeft : AlignRight;
 
   return (
@@ -68,8 +106,9 @@ const TranscriptPanel: React.FC<TranscriptPanelProps> = ({
     >
       <div className="flex flex-row items-center w-full mb-1">
         <h2 className="uppercase tracking-widest text-xs font-semibold text-gray-400 flex-1">{title}</h2>
-        <button className="ml-2 p-1 rounded hover:bg-accent transition" aria-label="Toggle paragraph alignment"
-          onClick={() => setCurrentAlign(a => a === "left" ? "right" : "left")}
+        <button className="ml-2 p-1 rounded hover:bg-accent transition"
+          aria-label="Toggle paragraph alignment"
+          onClick={handleAlignToggle}
         >
           <AlIcon size={18} />
         </button>
@@ -112,15 +151,22 @@ const TranscriptPanel: React.FC<TranscriptPanelProps> = ({
             displayedWords.map((word, i) => (
               <span
                 key={i + ":" + word}
-                className={`inline-block mr-1 align-top
-                  ${animatingWords.includes(i) ? "fade-in-word" : ""}
+                className={`inline-block align-top
+                  ${animatingWordIndexes.includes(i) ? "fade-in-word" : ""}
                 `}
                 style={{
-                  opacity: animatingWords.includes(i) ? 0 : 1,
-                  animation: animatingWords.includes(i)
+                  opacity: animatingWordIndexes.includes(i) ? 0 : 1,
+                  animation: animatingWordIndexes.includes(i)
                     ? "fade-in-opacity 1.2s forwards"
                     : undefined,
-                  marginRight: lang === "en" ? "0.25em" : undefined,
+                  marginRight:
+                    (!reverseOrder && lang === "en") ? "0.25em"
+                      : (reverseOrder && lang === "en") ? "0.25em"  // Keep even when reversed, for LTR
+                      : undefined,
+                  marginLeft:
+                    (reverseOrder && lang === "en") ? undefined
+                      : undefined,
+                  // You may tune margin for CJK separately if needed
                 }}
               >
                 {word}

@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState } from "react";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
@@ -83,6 +82,8 @@ interface TranscriptNavProps {
   setRightVisible: (b: boolean) => void;
   transcript: string;
   translation: string;
+  navVisible?: boolean;
+  setNavVisible?: (b: boolean) => void;
 }
 
 const TranscriptNav: React.FC<TranscriptNavProps> = ({
@@ -101,6 +102,8 @@ const TranscriptNav: React.FC<TranscriptNavProps> = ({
   setRightVisible,
   transcript,
   translation,
+  navVisible = true,
+  setNavVisible,
 }) => {
   // Theme toggle
   const [darkMode, setDarkMode] = React.useState(() =>
@@ -115,14 +118,23 @@ const TranscriptNav: React.FC<TranscriptNavProps> = ({
   }, [darkMode]);
 
   // Auto-hide nav after inactivity 
+  // Add: notify parent about visibility so they can control RecordingDot
   const [visible, setVisible] = useState(true);
   const hideTimer = useRef<NodeJS.Timeout | null>(null);
   useEffect(() => {
-    if (!recording) return setVisible(true);
+    if (!recording) {
+      setVisible(true);
+      setNavVisible?.(true);
+      return;
+    }
     const handle = () => {
       setVisible(true);
+      setNavVisible?.(true);
       if (hideTimer.current) clearTimeout(hideTimer.current);
-      hideTimer.current = setTimeout(() => setVisible(false), 3000);
+      hideTimer.current = setTimeout(() => {
+        setVisible(false);
+        setNavVisible?.(false);
+      }, 3000);
     };
     window.addEventListener("mousemove", handle);
     window.addEventListener("touchstart", handle);
@@ -132,14 +144,20 @@ const TranscriptNav: React.FC<TranscriptNavProps> = ({
       window.removeEventListener("touchstart", handle);
       if (hideTimer.current) clearTimeout(hideTimer.current);
     };
-  }, [recording]);
+  }, [recording, setNavVisible]);
   const navRef = useRef<HTMLDivElement>(null);
-  const handleMouseEnter = () => setVisible(true);
+  const handleMouseEnter = () => {
+    setVisible(true);
+    setNavVisible?.(true);
+  };
 
   // Settings modal (popover)
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [llmProvider, setLlmProvider] = useState<string>(() => localStorage.getItem("llm_provider") || "openai");
   const [openaiKey, setOpenaiKey] = useState<string>(() => localStorage.getItem("openai_api_key") || "");
+  const [claudeKey, setClaudeKey] = useState<string>(() => localStorage.getItem("claude_api_key") || "");
+  const [deepseekKey, setDeepseekKey] = useState<string>(() => localStorage.getItem("deepseek_api_key") || "");
+  const [localLlmUrl, setLocalLlmUrl] = useState<string>(() => localStorage.getItem("local_llm_url") || "");
   const [ttslib, setTtslib] = useState<string>(() => localStorage.getItem("tts_provider") || "");
   const [ttsKey, setTtsKey] = useState<string>(() => localStorage.getItem("tts_api_key") || "");
   const [ttsVoice, setTtsVoice] = useState<string>(() => localStorage.getItem("tts_voice") || "");
@@ -154,6 +172,9 @@ const TranscriptNav: React.FC<TranscriptNavProps> = ({
   const saveSettings = () => {
     localStorage.setItem("openai_api_key", openaiKey);
     localStorage.setItem("llm_provider", llmProvider);
+    localStorage.setItem("claude_api_key", claudeKey);
+    localStorage.setItem("deepseek_api_key", deepseekKey);
+    localStorage.setItem("local_llm_url", localLlmUrl);
     localStorage.setItem("tts_provider", ttslib);
     localStorage.setItem("tts_api_key", ttsKey);
     localStorage.setItem("tts_voice", ttsVoice);
@@ -172,14 +193,14 @@ const TranscriptNav: React.FC<TranscriptNavProps> = ({
     saveAs(blob, "transcript.txt");
   };
 
-  // Responsive container (hug content)
+  // Responsive container and aria label for nav
   return (
     <>
       {/* Transcript Modal - full screen */}
       {showTranscript && (
         <Dialog open onOpenChange={setShowTranscript}>
-          <div className="fixed inset-0 bg-black/60 z-[9999] flex items-center justify-center p-2 animate-fade-in">
-            <div className="bg-white dark:bg-background w-full h-full max-w-4xl max-h-[99vh] p-6 flex flex-col rounded-lg shadow-lg z-[10000]">
+          <div className="fixed inset-0 bg-black/60 z-[9999] flex items-center justify-center p-0 animate-fade-in">
+            <div className="bg-white dark:bg-background w-full h-full max-w-full max-h-full p-6 flex flex-col rounded-none shadow-lg z-[10000]">
               <div className="flex justify-between items-center mb-2">
                 <h3 className="font-bold text-xl">Full Transcript</h3>
                 <Button variant="outline" size="sm" onClick={() => setShowTranscript(false)}>Close</Button>
@@ -205,8 +226,7 @@ const TranscriptNav: React.FC<TranscriptNavProps> = ({
           fixed z-50 left-1/2 bottom-0 
           transform -translate-x-1/2
           mx-auto 
-          inline-flex
-          flex-row justify-center items-center
+          inline-flex flex-row justify-center items-center
           space-x-3
           bg-white/90 dark:bg-background/90 border border-gray-300 dark:border-gray-700 shadow-lg rounded-full px-4 py-2 backdrop-blur-xl
           transition-opacity duration-500
@@ -214,7 +234,15 @@ const TranscriptNav: React.FC<TranscriptNavProps> = ({
           ${visible ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}
           ${className}
         `}
-        style={{ transition: "opacity 0.5s", marginBottom: "1rem", maxWidth: "100vw" }}
+        aria-label="Transcription Controls"
+        style={{
+          transition: "opacity 0.5s",
+          marginBottom: "1rem",
+          maxWidth: "100vw",
+          width: "auto",
+          minWidth: 0,
+          maxHeight: "calc(100vh - 2rem)",
+        }}
         onMouseEnter={handleMouseEnter}
       >
         {/* Mic button moved to left */}
@@ -334,7 +362,7 @@ const TranscriptNav: React.FC<TranscriptNavProps> = ({
               <Settings size={22} />
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-80">
+          <PopoverContent className="w-96 max-w-[96vw]">
             <div className="flex flex-col gap-4">
               <div>
                 <label className="font-bold text-xs text-gray-700">AI Model Provider</label>
@@ -348,7 +376,7 @@ const TranscriptNav: React.FC<TranscriptNavProps> = ({
                   ))}
                 </select>
               </div>
-              {/* Conditional keys per provider */}
+              {/* Show fields depending on provider */}
               {llmProvider === "openai" && (
                 <div>
                   <label className="font-bold text-xs text-gray-700">OpenAI API key</label>
@@ -361,6 +389,44 @@ const TranscriptNav: React.FC<TranscriptNavProps> = ({
                   />
                 </div>
               )}
+              {llmProvider === "claude" && (
+                <div>
+                  <label className="font-bold text-xs text-gray-700">Claude API key</label>
+                  <input
+                    className="w-full mt-1 border rounded px-2 py-1 bg-background"
+                    value={claudeKey}
+                    type="password"
+                    onChange={e => setClaudeKey(e.target.value)}
+                    placeholder="p-..."
+                  />
+                </div>
+              )}
+              {llmProvider === "deepseek" && (
+                <div>
+                  <label className="font-bold text-xs text-gray-700">Deepseek API key</label>
+                  <input
+                    className="w-full mt-1 border rounded px-2 py-1 bg-background"
+                    value={deepseekKey}
+                    type="password"
+                    onChange={e => setDeepseekKey(e.target.value)}
+                    placeholder="..."
+                  />
+                </div>
+              )}
+              {llmProvider === "localllm" && (
+                <div>
+                  <label className="font-bold text-xs text-gray-700">Local LLM URL</label>
+                  <input
+                    className="w-full mt-1 border rounded px-2 py-1 bg-background"
+                    value={localLlmUrl}
+                    type="text"
+                    onChange={e => setLocalLlmUrl(e.target.value)}
+                    placeholder="http://localhost:port"
+                  />
+                </div>
+              )}
+              {/* Add additional model provider dynamic fields here */}
+              {/* TTS Provider and voice dropdown */}
               <div>
                 <label className="font-bold text-xs text-gray-700">TTS Provider</label>
                 <select
@@ -368,9 +434,16 @@ const TranscriptNav: React.FC<TranscriptNavProps> = ({
                   className="w-full mt-1 border rounded px-2 py-1 bg-background"
                   onChange={e => setTtslib(e.target.value)}
                 >
-                  {TTS_PROVIDERS.map(o => (
-                    <option key={o.value} value={o.value}>{o.label}</option>
-                  ))}
+                  {/* Add open source/other alternatives */}
+                  <option value="">None</option>
+                  <option value="elevenlabs">ElevenLabs</option>
+                  <option value="playht">PlayHT</option>
+                  <option value="localllm">Local LLM</option>
+                  <option value="openvoice">OpenVoice</option>
+                  <option value="xtts">XTTS</option>
+                  <option value="bark">Bark</option>
+                  <option value="open-source-tts-1">Open Source TTS 1</option>
+                  <option value="open-source-tts-2">Open Source TTS 2</option>
                 </select>
               </div>
               {(ttslib && ttslib !== "") && (
@@ -395,6 +468,8 @@ const TranscriptNav: React.FC<TranscriptNavProps> = ({
                       {TTS_VOICES[ttslib]?.map(opt => (
                         <option key={opt.value} value={opt.value}>{opt.label}</option>
                       ))}
+                      {/* Example: Dynamic fallback */}
+                      {!TTS_VOICES[ttslib]?.length && <option value="">Default</option>}
                     </select>
                   </div>
                 </>
