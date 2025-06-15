@@ -8,6 +8,7 @@ import {
   ResizablePanel,
   ResizableHandle,
 } from "@/components/ui/resizable";
+import { useAutoPlayOnSilence } from "@/hooks/useAutoPlayOnSilence";
 
 const RecordingDot = ({
   recording,
@@ -68,6 +69,18 @@ const Index: React.FC = () => {
       start();
     }
   };
+
+  // --- Silence detection to trigger TTS on right translation ---
+  useAutoPlayOnSilence({
+    isRecording: recording,
+    transcript: result.transcript,
+    translation: result.translation,
+    canAutoPlay: rightVisible && !!result.translation, // only if panel is visible & has text
+    isAudioPlaying: rightAudioPlaying,
+    setAudioPlaying: setRightAudioPlaying,
+    lang: rightLang,
+    timeoutMs: 5000,
+  });
 
   return (
     <main className="relative w-full min-h-screen bg-white dark:bg-background flex flex-col items-center justify-center p-0 h-screen">
