@@ -1,4 +1,3 @@
-
 /**
  * Microphone recording and voice-to-text: fallback to demo if Web Speech API not present.
  */
@@ -59,10 +58,11 @@ class RealVoiceRecognizer {
     this.transcript = "";
     this.active = true;
     this.onResult = onResult;
-    // @ts-ignore
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) throw new Error("Web Speech API not available");
-    this.recognition = new SpeechRecognition();
+    // proper type detection of web speech API
+    const SpeechRecognitionCtor =
+      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognitionCtor) throw new Error("Web Speech API not available");
+    this.recognition = new SpeechRecognitionCtor();
     this.recognition.interimResults = true;
     this.recognition.lang = "en-US";
     this.recognition.continuous = true;
@@ -105,7 +105,9 @@ export function useVoiceRecognition() {
 
   const start = () => {
     setRecording(true);
-    if (window.SpeechRecognition || window.webkitSpeechRecognition) {
+    const SpeechRecognitionCtor =
+      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (SpeechRecognitionCtor) {
       if (!recognizerRef.current || !(recognizerRef.current instanceof RealVoiceRecognizer)) {
         recognizerRef.current = new RealVoiceRecognizer();
       }

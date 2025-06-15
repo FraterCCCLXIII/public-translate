@@ -1,25 +1,53 @@
-import React, { useEffect, useRef } from "react";
+
+import React, { useEffect, useRef, useState } from "react";
 
 interface TranscriptPanelProps {
   title: string;
   text: string;
   align?: "left" | "right";
-  textSize?: number; // 5..9 maps to Tailwind text-3xl..text-9xl
+  textSize?: number; // is px
+  lang?: string;
 }
 
 const TranscriptPanel: React.FC<TranscriptPanelProps> = ({
   title,
   text,
   align = "left",
-  textSize = 7,
+  textSize = 80,
+  lang = "en",
 }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [displayedWords, setDisplayedWords] = useState<string[]>([]);
+  const [animatingWords, setAnimatingWords] = useState<number[]>([]);
+  const prevTextRef = useRef<string>("");
+
+  // Burn-in effect: only fade-in new words
+  useEffect(() => {
+    const curWords = text.split(/\s+/).filter(Boolean);
+    const prevWords = prevTextRef.current.split(/\s+/).filter(Boolean);
+
+    let start = 0;
+    while (start < curWords.length && curWords[start] === prevWords[start]) {
+      start++;
+    }
+    setDisplayedWords(curWords);
+    if (curWords.length > prevWords.length) {
+      // Animate in the new words (added at end)
+      const newIndexes = [];
+      for (let i = start; i < curWords.length; ++i) newIndexes.push(i);
+      setAnimatingWords(newIndexes);
+      setTimeout(() => setAnimatingWords([]), 1200); // match fade-in duration
+    } else {
+      setAnimatingWords([]);
+    }
+    prevTextRef.current = text;
+  }, [text]);
 
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [text]);
+  }, [displayedWords]);
 
   return (
     <section
@@ -37,33 +65,53 @@ const TranscriptPanel: React.FC<TranscriptPanelProps> = ({
           overflow-y-auto
           scrollbar-thin
           transition-colors
+          min-h-[3em]
+          max-h-[100vh]
         `}
         style={{
           minHeight: "3em",
-          maxHeight: "100vh",
+          height: "calc(100vh - 120px)",
         }}
       >
         <span
-          key={text}
           className={`
-            block animate-fade-in
+            block
             ${align === "left" ? "text-left" : "text-right"}
             font-black leading-tight p-2
-            text-${textSize}xl
             opacity-100
             transition-opacity
+            ${displayedWords.length === 0 ? "text-gray-300" : ""}
           `}
           style={{
-            animation: "fade-in 1.2s forwards",
+            // @ts-ignore
+            fontSize: textSize + "px",
             wordBreak: "break-word",
             lineHeight: 1.14,
             minHeight: "2em"
           }}
         >
-          {text || <span className="text-gray-300">...</span>}
+          {displayedWords.length === 0 ? (
+            <span className="text-gray-300">...</span>
+          ) : (
+            displayedWords.map((word, i) => (
+              <span
+                key={i + ":" + word}
+                className={`inline-block mr-1 align-top 
+                  ${animatingWords.includes(i) ? "animate-fade-in-word" : ""}
+                `}
+                style={{
+                  animation: animatingWords.includes(i)
+                    ? "fade-in-word 1.2s forwards"
+                    : undefined,
+                }}
+              >
+                {word}
+              </span>
+            ))
+          )}
         </span>
         <style>{`
-            @keyframes fade-in {
+            @keyframes fade-in-word {
               0% { opacity: 0; transform: translateY(10px);}
               100% { opacity: 1; transform: none;}
             }
