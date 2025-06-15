@@ -1,6 +1,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { AlignLeft, AlignRight } from "lucide-react";
+import AudioPlaybackButton from "./AudioPlaybackButton";
 
 // Utility function to check if language should use RTL order.
 const RTL_LANGS = new Set([
@@ -19,6 +20,9 @@ interface TranscriptPanelProps {
   align?: "left" | "right";
   textSize?: number; // is px
   lang?: string;
+  showAudioButton?: boolean;
+  audioButtonProps?: any;
+  alignState?: { currentAlign: "left" | "right"; setCurrentAlign: (a: "left"|"right")=>void; reverseOrder: boolean; setReverseOrder: (b: boolean)=>void };
 }
 
 const ALIGNMENTS = {
@@ -32,28 +36,36 @@ const TranscriptPanel: React.FC<TranscriptPanelProps> = ({
   align = "left",
   textSize = 80,
   lang = "en",
+  showAudioButton,
+  audioButtonProps,
+  alignState,
 }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [displayedWords, setDisplayedWords] = useState<string[]>([]);
   const [animatingWordIndexes, setAnimatingWordIndexes] = useState<number[]>([]);
   const prevTextRef = useRef<string>("");
-  const [currentAlign, setCurrentAlign] = useState<"left"|"right">(align);
+  const [currentAlign, setCurrentAlign] = alignState
+    ? [alignState.currentAlign, alignState.setCurrentAlign]
+    : useState<"left"|"right">(align);
   // Track reversed ordering for RTL-style
-  const [reverseOrder, setReverseOrder] = useState(isRTL(lang));
+  const [reverseOrder, setReverseOrder] = alignState
+    ? [alignState.reverseOrder, alignState.setReverseOrder]
+    : useState(isRTL(lang));
 
-  // Change order logic on alignment click
   const handleAlignToggle = () => {
-    setCurrentAlign(a => (a === "left" ? "right" : "left"));
-    setReverseOrder(ro => !ro);
+    setCurrentAlign(a => {
+      const nextAlign = a === "left" ? "right" : "left";
+      setReverseOrder(ro => !ro);
+      return nextAlign;
+    });
   };
 
-  // Burn-in effect: only fade-in new words by opacity (not fade-up)
+  // Burn-in effect: only fade-in new words by opacity (no fade-up)
   useEffect(() => {
-    // Split to words (for CJK/kana/han, fallback to normal split)
     let curWords: string[] =
       /[\u4E00-\u9FFF\u3040-\u30FF]/.test(lang || "")
         ? text.split("")
-        : text.split(/\s+/).filter(Boolean);
+        : text.trim().split(/\s+/).filter(Boolean);
 
     // If the panel is in RTL mode, reverse the array for display only
     if (reverseOrder) curWords = curWords.slice().reverse();
@@ -61,7 +73,7 @@ const TranscriptPanel: React.FC<TranscriptPanelProps> = ({
     let prevWords: string[] =
       /[\u4E00-\u9FFF\u3040-\u30FF]/.test(lang || "")
         ? prevTextRef.current.split("")
-        : prevTextRef.current.split(/\s+/).filter(Boolean);
+        : prevTextRef.current.trim().split(/\s+/).filter(Boolean);
     if (reverseOrder) prevWords = prevWords.slice().reverse();
 
     let start = 0;
@@ -75,7 +87,6 @@ const TranscriptPanel: React.FC<TranscriptPanelProps> = ({
     }
     setDisplayedWords(curWords);
     if (curWords.length > prevWords.length) {
-      // Animate only the new words (from start onward)
       const newIndexes = [];
       for (let i = start; i < curWords.length; ++i) newIndexes.push(i);
       setAnimatingWordIndexes(newIndexes);
@@ -84,8 +95,6 @@ const TranscriptPanel: React.FC<TranscriptPanelProps> = ({
       setAnimatingWordIndexes([]);
     }
     prevTextRef.current = text;
-    // eslint-disable-next-line
-    // depends on text, lang, reverseOrder
   }, [text, lang, reverseOrder]);
 
   useEffect(() => {
@@ -102,9 +111,10 @@ const TranscriptPanel: React.FC<TranscriptPanelProps> = ({
       className={`
         flex flex-col h-full w-full px-8 pt-8 pb-6
         ${currentAlign === "left" ? "items-start" : "items-end"}
+        relative
       `}
     >
-      <div className="flex flex-row items-center w-full mb-1">
+      <div className="flex flex-row items-center w-full mb-1 justify-between">
         <h2 className="uppercase tracking-widest text-xs font-semibold text-gray-400 flex-1">{title}</h2>
         <button className="ml-2 p-1 rounded hover:bg-accent transition"
           aria-label="Toggle paragraph alignment"
@@ -161,15 +171,13 @@ const TranscriptPanel: React.FC<TranscriptPanelProps> = ({
                     : undefined,
                   marginRight:
                     (!reverseOrder && lang === "en") ? "0.25em"
-                      : (reverseOrder && lang === "en") ? "0.25em"  // Keep even when reversed, for LTR
+                      : (reverseOrder && lang === "en") ? "0.25em"
                       : undefined,
-                  marginLeft:
-                    (reverseOrder && lang === "en") ? undefined
-                      : undefined,
-                  // You may tune margin for CJK separately if needed
                 }}
               >
                 {word}
+                {/* Add space between LTR words unless last or RTL */}
+                {(!reverseOrder && lang === "en" && i !== displayedWords.length - 1) ? " " : ""}
               </span>
             ))
           )}
@@ -181,6 +189,9 @@ const TranscriptPanel: React.FC<TranscriptPanelProps> = ({
             }
         `}</style>
       </div>
+      {showAudioButton && audioButtonProps &&
+        <AudioPlaybackButton {...audioButtonProps} />
+      }
     </section>
   );
 };

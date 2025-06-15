@@ -35,6 +35,7 @@ const LLM_MODELS = [
   { value: "claude", label: "Claude" },
   { value: "deepseek", label: "Deepseek" },
   { value: "localllm", label: "Local LLM" },
+  { value: "googletranslate", label: "Google Translate (free)" },
 ];
 const TTS_PROVIDERS = [
   { value: "", label: "None" },
@@ -158,6 +159,7 @@ const TranscriptNav: React.FC<TranscriptNavProps> = ({
   const [claudeKey, setClaudeKey] = useState<string>(() => localStorage.getItem("claude_api_key") || "");
   const [deepseekKey, setDeepseekKey] = useState<string>(() => localStorage.getItem("deepseek_api_key") || "");
   const [localLlmUrl, setLocalLlmUrl] = useState<string>(() => localStorage.getItem("local_llm_url") || "");
+  const [googleKey, setGoogleKey] = useState<string>(() => localStorage.getItem("google_api_key") || "");
   const [ttslib, setTtslib] = useState<string>(() => localStorage.getItem("tts_provider") || "");
   const [ttsKey, setTtsKey] = useState<string>(() => localStorage.getItem("tts_api_key") || "");
   const [ttsVoice, setTtsVoice] = useState<string>(() => localStorage.getItem("tts_voice") || "");
@@ -175,6 +177,7 @@ const TranscriptNav: React.FC<TranscriptNavProps> = ({
     localStorage.setItem("claude_api_key", claudeKey);
     localStorage.setItem("deepseek_api_key", deepseekKey);
     localStorage.setItem("local_llm_url", localLlmUrl);
+    localStorage.setItem("google_api_key", googleKey);
     localStorage.setItem("tts_provider", ttslib);
     localStorage.setItem("tts_api_key", ttsKey);
     localStorage.setItem("tts_voice", ttsVoice);
@@ -375,6 +378,11 @@ const TranscriptNav: React.FC<TranscriptNavProps> = ({
                     <option key={o.value} value={o.value}>{o.label}</option>
                   ))}
                 </select>
+                {llmProvider === "googletranslate" && (
+                  <div className="text-xs text-blue-600 mt-1">
+                    Uses Google Translate via a backend proxy (requires a Python proxy API with <a href="https://pypi.org/project/googletrans/" target="_blank" rel="noopener noreferrer" className="underline">googletrans</a> on server).
+                  </div>
+                )}
               </div>
               {/* Show fields depending on provider */}
               {llmProvider === "openai" && (
@@ -425,7 +433,19 @@ const TranscriptNav: React.FC<TranscriptNavProps> = ({
                   />
                 </div>
               )}
-              {/* Add additional model provider dynamic fields here */}
+              {/* Additional Google API key field if necessary */}
+              {(llmProvider === "googletranslate") && (
+                <div>
+                  <label className="font-bold text-xs text-gray-700">Proxy URL / Key (if needed)</label>
+                  <input
+                    className="w-full mt-1 border rounded px-2 py-1 bg-background"
+                    value={googleKey}
+                    type="text"
+                    onChange={e => setGoogleKey(e.target.value)}
+                    placeholder="Proxy endpoint or leave blank if not needed"
+                  />
+                </div>
+              )}
               {/* TTS Provider and voice dropdown */}
               <div>
                 <label className="font-bold text-xs text-gray-700">TTS Provider</label>
