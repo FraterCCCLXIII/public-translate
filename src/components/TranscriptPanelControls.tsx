@@ -1,6 +1,7 @@
 
 import React from "react";
-import { AlignLeft, AlignRight, AudioLines } from "lucide-react";
+import { AlignLeft, AlignRight } from "lucide-react";
+import AudioPlaybackButton from "./AudioPlaybackButton";
 
 interface TranscriptPanelControlsProps {
   align: "left" | "right";
@@ -9,15 +10,30 @@ interface TranscriptPanelControlsProps {
   onAudioPlayback: () => void;
   audioPlaying: boolean;
   audioLoading: boolean;
+
+  // New props for AudioPlaybackButton
+  audioText?: string;
+  audioLang?: string;
+  selectedVoice?: string;
+  setSelectedVoice?: (voiceId: string) => void;
+  setPlaying?: (v: boolean) => void;
+  onPlaybackStart?: () => void;
+  onPlaybackEnd?: () => void;
 }
 
 const TranscriptPanelControls: React.FC<TranscriptPanelControlsProps> = ({
   align,
   onToggleAlign,
   canAudioPlayback,
-  onAudioPlayback,
   audioPlaying,
   audioLoading,
+  audioText = "",
+  audioLang = "en",
+  selectedVoice,
+  setSelectedVoice,
+  setPlaying = () => {},
+  onPlaybackStart,
+  onPlaybackEnd,
 }) => {
   const AlIcon = align === "left" ? AlignLeft : AlignRight;
 
@@ -31,20 +47,17 @@ const TranscriptPanelControls: React.FC<TranscriptPanelControlsProps> = ({
       >
         <AlIcon size={18} />
       </button>
-      <button
-        type="button"
-        className={`ml-1 p-1 rounded-full transition focus:outline-none ${audioPlaying ? "bg-blue-100" : "hover:bg-accent"}`}
-        onClick={onAudioPlayback}
-        aria-label="Play transcript with text-to-speech"
+      <AudioPlaybackButton
+        text={audioText}
+        lang={audioLang}
+        playing={audioPlaying}
+        setPlaying={setPlaying}
+        onPlaybackStart={onPlaybackStart}
+        onPlaybackEnd={onPlaybackEnd}
         disabled={!canAudioPlayback}
-        style={{ pointerEvents: !canAudioPlayback ? "none" : "auto" }}
-      >
-        {audioLoading ? (
-          <svg className="animate-spin text-blue-500" width={20} height={20} viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" /></svg>
-        ) : (
-          <AudioLines className={audioPlaying ? "text-blue-500" : "text-gray-700"} size={20} />
-        )}
-      </button>
+        selectedVoice={selectedVoice}
+        setSelectedVoice={setSelectedVoice}
+      />
     </div>
   );
 };
