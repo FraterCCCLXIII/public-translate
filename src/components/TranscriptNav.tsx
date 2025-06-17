@@ -18,12 +18,151 @@ import TranscriptPanel from "./TranscriptPanel";
 const t = (key: string, defaultVal: string) => defaultVal; // Replace with real t() function
 
 const LANGUAGES = [
+  // Major World Languages
   { value: "en", label: "English", alphabet: "latin" },
-  { value: "ja", label: "Japanese", alphabet: "kana" },
+  { value: "es", label: "Spanish", alphabet: "latin" },
   { value: "fr", label: "French", alphabet: "latin" },
   { value: "de", label: "German", alphabet: "latin" },
-  { value: "es", label: "Spanish", alphabet: "latin" },
-  { value: "zh", label: "Chinese", alphabet: "han" }
+  { value: "it", label: "Italian", alphabet: "latin" },
+  { value: "pt", label: "Portuguese", alphabet: "latin" },
+  { value: "ru", label: "Russian", alphabet: "cyrillic" },
+  { value: "zh", label: "Chinese", alphabet: "han" },
+  { value: "ja", label: "Japanese", alphabet: "kana" },
+  { value: "ko", label: "Korean", alphabet: "hangul" },
+  { value: "ar", label: "Arabic", alphabet: "arabic" },
+  { value: "hi", label: "Hindi", alphabet: "devanagari" },
+  { value: "bn", label: "Bengali", alphabet: "bengali" },
+  { value: "ur", label: "Urdu", alphabet: "arabic" },
+  { value: "tr", label: "Turkish", alphabet: "latin" },
+  { value: "th", label: "Thai", alphabet: "thai" },
+  { value: "vi", label: "Vietnamese", alphabet: "latin" },
+  { value: "id", label: "Indonesian", alphabet: "latin" },
+  { value: "ms", label: "Malay", alphabet: "latin" },
+  { value: "fa", label: "Persian", alphabet: "arabic" },
+  { value: "he", label: "Hebrew", alphabet: "hebrew" },
+  { value: "pl", label: "Polish", alphabet: "latin" },
+  { value: "nl", label: "Dutch", alphabet: "latin" },
+  { value: "sv", label: "Swedish", alphabet: "latin" },
+  { value: "da", label: "Danish", alphabet: "latin" },
+  { value: "no", label: "Norwegian", alphabet: "latin" },
+  { value: "fi", label: "Finnish", alphabet: "latin" },
+  { value: "cs", label: "Czech", alphabet: "latin" },
+  { value: "sk", label: "Slovak", alphabet: "latin" },
+  { value: "hu", label: "Hungarian", alphabet: "latin" },
+  { value: "ro", label: "Romanian", alphabet: "latin" },
+  { value: "bg", label: "Bulgarian", alphabet: "cyrillic" },
+  { value: "hr", label: "Croatian", alphabet: "latin" },
+  { value: "sr", label: "Serbian", alphabet: "cyrillic" },
+  { value: "sl", label: "Slovenian", alphabet: "latin" },
+  { value: "et", label: "Estonian", alphabet: "latin" },
+  { value: "lv", label: "Latvian", alphabet: "latin" },
+  { value: "lt", label: "Lithuanian", alphabet: "latin" },
+  { value: "el", label: "Greek", alphabet: "greek" },
+  { value: "mt", label: "Maltese", alphabet: "latin" },
+  { value: "ga", label: "Irish", alphabet: "latin" },
+  { value: "cy", label: "Welsh", alphabet: "latin" },
+  { value: "is", label: "Icelandic", alphabet: "latin" },
+  { value: "ca", label: "Catalan", alphabet: "latin" },
+  { value: "eu", label: "Basque", alphabet: "latin" },
+  { value: "gl", label: "Galician", alphabet: "latin" },
+  { value: "af", label: "Afrikaans", alphabet: "latin" },
+  { value: "sw", label: "Swahili", alphabet: "latin" },
+  { value: "am", label: "Amharic", alphabet: "ethiopic" },
+  { value: "yo", label: "Yoruba", alphabet: "latin" },
+  { value: "ig", label: "Igbo", alphabet: "latin" },
+  { value: "zu", label: "Zulu", alphabet: "latin" },
+  { value: "xh", label: "Xhosa", alphabet: "latin" },
+  { value: "ta", label: "Tamil", alphabet: "tamil" },
+  { value: "te", label: "Telugu", alphabet: "telugu" },
+  { value: "kn", label: "Kannada", alphabet: "kannada" },
+  { value: "ml", label: "Malayalam", alphabet: "malayalam" },
+  { value: "gu", label: "Gujarati", alphabet: "gujarati" },
+  { value: "pa", label: "Punjabi", alphabet: "gurmukhi" },
+  { value: "mr", label: "Marathi", alphabet: "devanagari" },
+  { value: "or", label: "Odia", alphabet: "odia" },
+  { value: "as", label: "Assamese", alphabet: "bengali" },
+  { value: "ne", label: "Nepali", alphabet: "devanagari" },
+  { value: "si", label: "Sinhala", alphabet: "sinhala" },
+  { value: "my", label: "Burmese", alphabet: "myanmar" },
+  { value: "km", label: "Khmer", alphabet: "khmer" },
+  { value: "lo", label: "Lao", alphabet: "lao" },
+  { value: "mn", label: "Mongolian", alphabet: "cyrillic" },
+  { value: "ka", label: "Georgian", alphabet: "georgian" },
+  { value: "hy", label: "Armenian", alphabet: "armenian" },
+  { value: "az", label: "Azerbaijani", alphabet: "latin" },
+  { value: "kk", label: "Kazakh", alphabet: "cyrillic" },
+  { value: "ky", label: "Kyrgyz", alphabet: "cyrillic" },
+  { value: "uz", label: "Uzbek", alphabet: "latin" },
+  { value: "tg", label: "Tajik", alphabet: "cyrillic" },
+  { value: "tk", label: "Turkmen", alphabet: "latin" },
+  { value: "ps", label: "Pashto", alphabet: "arabic" },
+  { value: "ku", label: "Kurdish", alphabet: "arabic" },
+  { value: "sd", label: "Sindhi", alphabet: "arabic" },
+  { value: "bo", label: "Tibetan", alphabet: "tibetan" },
+  { value: "dz", label: "Dzongkha", alphabet: "tibetan" },
+  { value: "mk", label: "Macedonian", alphabet: "cyrillic" },
+  { value: "sq", label: "Albanian", alphabet: "latin" },
+  { value: "be", label: "Belarusian", alphabet: "cyrillic" },
+  { value: "uk", label: "Ukrainian", alphabet: "cyrillic" },
+  { value: "bs", label: "Bosnian", alphabet: "latin" },
+  { value: "me", label: "Montenegrin", alphabet: "latin" },
+  { value: "fy", label: "Frisian", alphabet: "latin" },
+  { value: "lb", label: "Luxembourgish", alphabet: "latin" },
+  { value: "rm", label: "Romansh", alphabet: "latin" },
+  { value: "fo", label: "Faroese", alphabet: "latin" },
+  { value: "sm", label: "Samoan", alphabet: "latin" },
+  { value: "to", label: "Tongan", alphabet: "latin" },
+  { value: "fj", label: "Fijian", alphabet: "latin" },
+  { value: "haw", label: "Hawaiian", alphabet: "latin" },
+  { value: "mi", label: "Maori", alphabet: "latin" },
+  { value: "qu", label: "Quechua", alphabet: "latin" },
+  { value: "ay", label: "Aymara", alphabet: "latin" },
+  { value: "gn", label: "Guarani", alphabet: "latin" },
+  { value: "ht", label: "Haitian Creole", alphabet: "latin" },
+  { value: "jmc", label: "Machame", alphabet: "latin" },
+  { value: "sn", label: "Shona", alphabet: "latin" },
+  { value: "st", label: "Southern Sotho", alphabet: "latin" },
+  { value: "tn", label: "Tswana", alphabet: "latin" },
+  { value: "ve", label: "Venda", alphabet: "latin" },
+  { value: "ts", label: "Tsonga", alphabet: "latin" },
+  { value: "ss", label: "Swati", alphabet: "latin" },
+  { value: "nr", label: "Southern Ndebele", alphabet: "latin" },
+  { value: "nd", label: "Northern Ndebele", alphabet: "latin" },
+  { value: "rw", label: "Kinyarwanda", alphabet: "latin" },
+  { value: "ak", label: "Akan", alphabet: "latin" },
+  { value: "tw", label: "Twi", alphabet: "latin" },
+  { value: "ee", label: "Ewe", alphabet: "latin" },
+  { value: "fon", label: "Fon", alphabet: "latin" },
+  { value: "ha", label: "Hausa", alphabet: "latin" },
+  { value: "ff", label: "Fulah", alphabet: "latin" },
+  { value: "wo", label: "Wolof", alphabet: "latin" },
+  { value: "dyo", label: "Jola-Fonyi", alphabet: "latin" },
+  { value: "bem", label: "Bemba", alphabet: "latin" },
+  { value: "ny", label: "Chichewa", alphabet: "latin" },
+  { value: "byn", label: "Blin", alphabet: "ethiopic" },
+  { value: "ti", label: "Tigrinya", alphabet: "ethiopic" },
+  { value: "so", label: "Somali", alphabet: "latin" },
+  { value: "om", label: "Oromo", alphabet: "latin" },
+  { value: "gsw", label: "Swiss German", alphabet: "latin" },
+  { value: "fur", label: "Friulian", alphabet: "latin" },
+  { value: "lld", label: "Ladin", alphabet: "latin" },
+  { value: "vec", label: "Venetian", alphabet: "latin" },
+  { value: "sc", label: "Sardinian", alphabet: "latin" },
+  { value: "co", label: "Corsican", alphabet: "latin" },
+  { value: "oc", label: "Occitan", alphabet: "latin" },
+  { value: "an", label: "Aragonese", alphabet: "latin" },
+  { value: "ast", label: "Asturian", alphabet: "latin" },
+  { value: "ext", label: "Extremaduran", alphabet: "latin" },
+  { value: "lad", label: "Ladino", alphabet: "latin" },
+  { value: "wa", label: "Walloon", alphabet: "latin" },
+  { value: "pcd", label: "Picard", alphabet: "latin" },
+  { value: "nrf", label: "Guernésiais", alphabet: "latin" },
+  { value: "jèr", label: "Jèrriais", alphabet: "latin" },
+  { value: "sco", label: "Scots", alphabet: "latin" },
+  { value: "gd", label: "Scottish Gaelic", alphabet: "latin" },
+  { value: "kw", label: "Cornish", alphabet: "latin" },
+  { value: "br", label: "Breton", alphabet: "latin" },
+  { value: "gv", label: "Manx", alphabet: "latin" },
 ];
 
 // Add list of UI languages for the dropdown
@@ -114,6 +253,10 @@ interface TranscriptNavProps {
   isAudioPlaying?: boolean;
   showDebugWindow?: boolean;
   setShowDebugWindow?: (show: boolean) => void;
+  autoSpeak?: boolean;
+  setAutoSpeak?: (enabled: boolean) => void;
+  silenceTimeout?: number;
+  setSilenceTimeout?: (timeout: number) => void;
 }
 
 const TranscriptNavInner: React.FC<TranscriptNavProps> = ({
@@ -137,6 +280,10 @@ const TranscriptNavInner: React.FC<TranscriptNavProps> = ({
   isAudioPlaying = false,
   showDebugWindow = false,
   setShowDebugWindow,
+  autoSpeak = true,
+  setAutoSpeak,
+  silenceTimeout = 3000,
+  setSilenceTimeout,
 }) => {
   const [darkMode, setDarkMode] = React.useState(() =>
     document.documentElement.classList.contains("dark")
@@ -236,8 +383,6 @@ const TranscriptNavInner: React.FC<TranscriptNavProps> = ({
   // Settings modal (popover)
   const [llmProvider, setLlmProvider] = useState<string>(() => localStorage.getItem("llm_provider") || "openai");
   const [translationProvider, setTranslationProvider] = useState<string>(() => localStorage.getItem("translation_provider") || "auto");
-  const [autoSpeak, setAutoSpeak] = useState<boolean>(() => localStorage.getItem("auto_speak") !== "false"); // default true
-  const [silenceTimeout, setSilenceTimeout] = useState<number>(() => parseInt(localStorage.getItem("silence_timeout") || "3000")); // default 3 seconds
   const [openaiKey, setOpenaiKey] = useState<string>(() => localStorage.getItem("openai_api_key") || "");
   const [claudeKey, setClaudeKey] = useState<string>(() => localStorage.getItem("claude_api_key") || "");
   const [deepseekKey, setDeepseekKey] = useState<string>(() => localStorage.getItem("deepseek_api_key") || "");
@@ -310,6 +455,75 @@ const TranscriptNavInner: React.FC<TranscriptNavProps> = ({
     setNavVisible?.(true);
   };
 
+  // Language Selector Component with Search
+  const LanguageSelector: React.FC<{
+    value: string;
+    onValueChange: (value: string) => void;
+    placeholder?: string;
+    className?: string;
+  }> = ({ value, onValueChange, placeholder = "Select language", className = "" }) => {
+    const [searchTerm, setSearchTerm] = useState("");
+    const [isOpen, setIsOpen] = useState(false);
+    
+    const filteredLanguages = LANGUAGES.filter(lang =>
+      lang.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      lang.value.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    return (
+      <div className={`relative ${className}`}>
+        <Select value={value} onValueChange={onValueChange} open={isOpen} onOpenChange={setIsOpen}>
+          <SelectTrigger className="w-28" aria-label={placeholder}>
+            <SelectValue aria-label={placeholder}>
+              {LANGUAGES.find(l => l.value === value)?.label || value}
+            </SelectValue>
+          </SelectTrigger>
+          <SelectContent className="max-h-96">
+            {/* Search Input - Sticky at top */}
+            <div className="sticky top-0 bg-background border-b p-2">
+              <input
+                type="text"
+                placeholder="Search languages..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full px-2 py-1 text-sm border rounded bg-background focus:outline-none focus:ring-2 focus:ring-blue-500"
+                onKeyDown={(e) => {
+                  if (e.key === "Escape") {
+                    setSearchTerm("");
+                    setIsOpen(false);
+                  }
+                }}
+                onPointerDown={e => e.stopPropagation()}
+              />
+            </div>
+            
+            {/* Language List */}
+            <div className="max-h-80 overflow-y-auto">
+              {filteredLanguages.length === 0 ? (
+                <div className="px-2 py-2 text-sm text-gray-500 text-center">
+                  No languages found
+                </div>
+              ) : (
+                filteredLanguages.map(lang => (
+                  <SelectItem 
+                    key={lang.value} 
+                    value={lang.value}
+                    className="cursor-pointer hover:bg-accent"
+                  >
+                    <div className="flex items-center justify-between w-full">
+                      <span>{lang.label}</span>
+                      <span className="text-xs text-gray-400 ml-2">{lang.value}</span>
+                    </div>
+                  </SelectItem>
+                ))
+              )}
+            </div>
+          </SelectContent>
+        </Select>
+      </div>
+    );
+  };
+
   return (
     <>
       {/* About Modal */}
@@ -363,8 +577,8 @@ const TranscriptNavInner: React.FC<TranscriptNavProps> = ({
           transform -translate-x-1/2
           mx-auto 
           inline-flex flex-row justify-center items-center
-          space-x-3
-          bg-white/90 dark:bg-background/90 border border-gray-300 dark:border-gray-700 shadow-lg rounded-full px-4 py-2 backdrop-blur-xl
+          gap-x-2
+          bg-white/90 dark:bg-background/90 border border-gray-300 dark:border-gray-700 shadow-lg rounded-full px-4 py-3 backdrop-blur-xl
           transition-opacity duration-500
           mb-4
           ${visible ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}
@@ -376,8 +590,8 @@ const TranscriptNavInner: React.FC<TranscriptNavProps> = ({
           marginBottom: "1rem",
           maxWidth: "100vw",
           width: "auto",
-          minWidth: 0,
-          maxHeight: "calc(100vh - 2rem)",
+          minWidth: "0px",
+          maxHeight: "calc(-2rem + 100vh)"
         }}
         onMouseEnter={handleMouseEnter}
       >
@@ -400,24 +614,13 @@ const TranscriptNavInner: React.FC<TranscriptNavProps> = ({
         {/* Left Language Select with tooltip */}
         <Tooltip>
           <TooltipTrigger asChild>
-            <div className="relative flex items-center w-28">
-              <Select value={leftLang} onValueChange={setLeftLang}>
-                <SelectTrigger className="w-28" aria-label={t("from_language")}>
-                  <SelectValue aria-label="From language">
-                    {LANGUAGES.find(l=>l.value===leftLang)?.label || leftLang}
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  {LANGUAGES.map(lang => (
-                    <SelectItem key={lang.value} value={lang.value}>{lang.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <div className="flex items-center gap-x-2">
+              <LanguageSelector value={leftLang} onValueChange={setLeftLang} />
               <Button
                 variant="ghost"
                 size="icon"
                 aria-label={t("hide_left_panel")}
-                className="ml-1"
+                className="h-10 w-10 !rounded-full aspect-square"
                 onClick={() => setLeftVisible(!leftVisible)}
                 tabIndex={-1}
               >
@@ -435,24 +638,13 @@ const TranscriptNavInner: React.FC<TranscriptNavProps> = ({
         {/* Right Language Select with tooltip */}
         <Tooltip>
           <TooltipTrigger asChild>
-            <div className="relative flex items-center w-28">
-              <Select value={rightLang} onValueChange={setRightLang}>
-                <SelectTrigger className="w-28" aria-label={t("to_language")}>
-                  <SelectValue aria-label="To language">
-                    {LANGUAGES.find(l=>l.value===rightLang)?.label || rightLang}
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  {LANGUAGES.map(lang => (
-                    <SelectItem key={lang.value} value={lang.value}>{lang.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <div className="flex items-center gap-x-2">
+              <LanguageSelector value={rightLang} onValueChange={setRightLang} />
               <Button
                 variant="ghost"
                 size="icon"
                 aria-label={t("hide_right_panel")}
-                className="ml-1"
+                className="h-10 w-10 !rounded-full aspect-square"
                 onClick={() => setRightVisible(!rightVisible)}
                 tabIndex={-1}
               >
@@ -471,7 +663,7 @@ const TranscriptNavInner: React.FC<TranscriptNavProps> = ({
             <Button
               variant="ghost"
               size="icon"
-              className="ml-2"
+              className="h-10 w-10 !rounded-full aspect-square"
               onClick={() => setShowTranscript(true)}
               aria-label={t("view_full_transcript")}
             >
@@ -489,7 +681,7 @@ const TranscriptNavInner: React.FC<TranscriptNavProps> = ({
             <Button
               size="icon"
               variant="ghost"
-              className="ml-2"
+              className="h-10 w-10 !rounded-full aspect-square"
               aria-label={t("settings")}
             >
               <Settings size={22} />
@@ -603,7 +795,7 @@ const TranscriptNavInner: React.FC<TranscriptNavProps> = ({
                     type="checkbox"
                     id="autoSpeak"
                     checked={autoSpeak}
-                    onChange={e => setAutoSpeak(e.target.checked)}
+                    onChange={e => setAutoSpeak?.(e.target.checked)}
                     className="rounded"
                   />
                   <label htmlFor="autoSpeak" className="text-xs">Auto-speak translation after silence</label>
@@ -617,7 +809,7 @@ const TranscriptNavInner: React.FC<TranscriptNavProps> = ({
                       max="10"
                       step="0.5"
                       value={silenceTimeout / 1000}
-                      onChange={e => setSilenceTimeout(parseFloat(e.target.value) * 1000)}
+                      onChange={e => setSilenceTimeout?.(parseFloat(e.target.value) * 1000)}
                       className="w-full mt-1"
                     />
                     <div className="text-xs text-gray-500 mt-1">
@@ -717,13 +909,13 @@ const TranscriptNavInner: React.FC<TranscriptNavProps> = ({
           </PopoverContent>
         </Popover>
 
-        {/* Info icon with tooltip */}
+        {/* About icon */}
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
               variant="ghost"
               size="icon"
-              className="ml-1"
+              className="h-10 w-10 !rounded-full aspect-square"
               aria-label={t("about_app")}
               onClick={() => setAboutOpen(true)}
             >
@@ -735,13 +927,13 @@ const TranscriptNavInner: React.FC<TranscriptNavProps> = ({
           </TooltipContent>
         </Tooltip>
 
-        {/* Maximize/fullscreen with tooltip */}
+        {/* Fullscreen icon */}
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
               variant="ghost"
               size="icon"
-              className="ml-2"
+              className="h-10 w-10 !rounded-full aspect-square"
               aria-label={t("fullscreen")}
               onClick={handleMaximize}
             >

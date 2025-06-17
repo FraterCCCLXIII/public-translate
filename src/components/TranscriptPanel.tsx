@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import TranscriptPanelControls from "./TranscriptPanelControls";
 import { Slider } from "./ui/slider";
 import { Eye } from "lucide-react";
+import PunctuateText from "./PunctuateText";
 
 const RTL_LANGS = new Set(["ar", "he", "fa", "ur"]);
 function isRTL(lang: string) {
@@ -369,7 +370,7 @@ const TranscriptPanel: React.FC<TranscriptPanelProps> = ({
             >
               {displayedWords.map(w => w.text).join("")}
             </span>
-          ) : (
+          ) :
             <span
               dir={spanDir}
               className={`
@@ -391,28 +392,10 @@ const TranscriptPanel: React.FC<TranscriptPanelProps> = ({
               {displayedWords.length === 0 ? (
                 <span className="text-gray-300">...</span>
               ) : (
-                displayedWords.map((wordObj, i) => (
-                  <span
-                    key={i + ":" + wordObj.text}
-                    className={`inline-block align-top relative
-                      ${animatingWordIndexes.includes(i) ? "fade-in-word" : ""}
-                    `}
-                    style={{
-                      opacity: animatingWordIndexes.includes(i) ? 0 : 1,
-                      animation: animatingWordIndexes.includes(i)
-                        ? "fade-in-opacity 1.2s forwards"
-                        : undefined,
-                      marginRight: canReorderCharacters(lang) ? "0" : "0.25em",
-                      fontWeight: "inherit"
-                    }}
-                  >
-                    {wordObj.text}
-                    {(!canReorderCharacters(lang) && i !== displayedWords.length - 1) ? " " : ""}
-                  </span>
-                ))
+                <PunctuateText text={displayedWords.map(wordObj => wordObj.text).join(" ")} />
               )}
             </span>
-          )}
+          }
         </div>
         {/* Only render eye toggle if explicitly enabled (e.g. in modal), never in main columns now */}
         {showVisibilityToggle && typeof visible !== "undefined" && typeof setVisible === "function" && (

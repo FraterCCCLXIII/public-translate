@@ -8,8 +8,8 @@ import { useAutoPlayOnSilence } from "@/hooks/useAutoPlayOnSilence";
 
 // Language metadata
 const LANGUAGES = [
+  // Major World Languages
   { value: "en", label: "English" },
-  { value: "ja", label: "Japanese" },
   { value: "es", label: "Spanish" },
   { value: "fr", label: "French" },
   { value: "de", label: "German" },
@@ -17,8 +17,224 @@ const LANGUAGES = [
   { value: "pt", label: "Portuguese" },
   { value: "ru", label: "Russian" },
   { value: "zh", label: "Chinese" },
+  { value: "ja", label: "Japanese" },
   { value: "ko", label: "Korean" },
+  { value: "ar", label: "Arabic" },
+  { value: "hi", label: "Hindi" },
+  { value: "bn", label: "Bengali" },
+  { value: "ur", label: "Urdu" },
+  { value: "tr", label: "Turkish" },
+  { value: "th", label: "Thai" },
+  { value: "vi", label: "Vietnamese" },
+  { value: "id", label: "Indonesian" },
+  { value: "ms", label: "Malay" },
+  { value: "fa", label: "Persian" },
+  { value: "he", label: "Hebrew" },
+  { value: "pl", label: "Polish" },
+  { value: "nl", label: "Dutch" },
+  { value: "sv", label: "Swedish" },
+  { value: "da", label: "Danish" },
+  { value: "no", label: "Norwegian" },
+  { value: "fi", label: "Finnish" },
+  { value: "cs", label: "Czech" },
+  { value: "sk", label: "Slovak" },
+  { value: "hu", label: "Hungarian" },
+  { value: "ro", label: "Romanian" },
+  { value: "bg", label: "Bulgarian" },
+  { value: "hr", label: "Croatian" },
+  { value: "sr", label: "Serbian" },
+  { value: "sl", label: "Slovenian" },
+  { value: "et", label: "Estonian" },
+  { value: "lv", label: "Latvian" },
+  { value: "lt", label: "Lithuanian" },
+  { value: "el", label: "Greek" },
+  { value: "mt", label: "Maltese" },
+  { value: "ga", label: "Irish" },
+  { value: "cy", label: "Welsh" },
+  { value: "is", label: "Icelandic" },
+  { value: "ca", label: "Catalan" },
+  { value: "eu", label: "Basque" },
+  { value: "gl", label: "Galician" },
+  { value: "af", label: "Afrikaans" },
+  { value: "sw", label: "Swahili" },
+  { value: "am", label: "Amharic" },
+  { value: "yo", label: "Yoruba" },
+  { value: "ig", label: "Igbo" },
+  { value: "zu", label: "Zulu" },
+  { value: "xh", label: "Xhosa" },
+  { value: "ta", label: "Tamil" },
+  { value: "te", label: "Telugu" },
+  { value: "kn", label: "Kannada" },
+  { value: "ml", label: "Malayalam" },
+  { value: "gu", label: "Gujarati" },
+  { value: "pa", label: "Punjabi" },
+  { value: "mr", label: "Marathi" },
+  { value: "or", label: "Odia" },
+  { value: "as", label: "Assamese" },
+  { value: "ne", label: "Nepali" },
+  { value: "si", label: "Sinhala" },
+  { value: "my", label: "Burmese" },
+  { value: "km", label: "Khmer" },
+  { value: "lo", label: "Lao" },
+  { value: "mn", label: "Mongolian" },
+  { value: "ka", label: "Georgian" },
+  { value: "hy", label: "Armenian" },
+  { value: "az", label: "Azerbaijani" },
+  { value: "kk", label: "Kazakh" },
+  { value: "ky", label: "Kyrgyz" },
+  { value: "uz", label: "Uzbek" },
+  { value: "tg", label: "Tajik" },
+  { value: "tk", label: "Turkmen" },
+  { value: "ps", label: "Pashto" },
+  { value: "ku", label: "Kurdish" },
+  { value: "sd", label: "Sindhi" },
+  { value: "bo", label: "Tibetan" },
+  { value: "dz", label: "Dzongkha" },
+  { value: "mk", label: "Macedonian" },
+  { value: "sq", label: "Albanian" },
+  { value: "be", label: "Belarusian" },
+  { value: "uk", label: "Ukrainian" },
+  { value: "bs", label: "Bosnian" },
+  { value: "me", label: "Montenegrin" },
+  { value: "fy", label: "Frisian" },
+  { value: "lb", label: "Luxembourgish" },
+  { value: "rm", label: "Romansh" },
+  { value: "fo", label: "Faroese" },
+  { value: "sm", label: "Samoan" },
+  { value: "to", label: "Tongan" },
+  { value: "fj", label: "Fijian" },
+  { value: "haw", label: "Hawaiian" },
+  { value: "mi", label: "Maori" },
+  { value: "qu", label: "Quechua" },
+  { value: "ay", label: "Aymara" },
+  { value: "gn", label: "Guarani" },
+  { value: "ht", label: "Haitian Creole" },
+  { value: "jmc", label: "Machame" },
+  { value: "sn", label: "Shona" },
+  { value: "st", label: "Southern Sotho" },
+  { value: "tn", label: "Tswana" },
+  { value: "ve", label: "Venda" },
+  { value: "ts", label: "Tsonga" },
+  { value: "ss", label: "Swati" },
+  { value: "nr", label: "Southern Ndebele" },
+  { value: "nd", label: "Northern Ndebele" },
+  { value: "rw", label: "Kinyarwanda" },
+  { value: "ak", label: "Akan" },
+  { value: "tw", label: "Twi" },
+  { value: "ee", label: "Ewe" },
+  { value: "fon", label: "Fon" },
+  { value: "ha", label: "Hausa" },
+  { value: "ff", label: "Fulah" },
+  { value: "wo", label: "Wolof" },
+  { value: "dyo", label: "Jola-Fonyi" },
+  { value: "bem", label: "Bemba" },
+  { value: "ny", label: "Chichewa" },
+  { value: "byn", label: "Blin" },
+  { value: "ti", label: "Tigrinya" },
+  { value: "so", label: "Somali" },
+  { value: "om", label: "Oromo" },
+  { value: "gsw", label: "Swiss German" },
+  { value: "fur", label: "Friulian" },
+  { value: "lld", label: "Ladin" },
+  { value: "vec", label: "Venetian" },
+  { value: "sc", label: "Sardinian" },
+  { value: "co", label: "Corsican" },
+  { value: "oc", label: "Occitan" },
+  { value: "an", label: "Aragonese" },
+  { value: "ast", label: "Asturian" },
+  { value: "ext", label: "Extremaduran" },
+  { value: "lad", label: "Ladino" },
+  { value: "wa", label: "Walloon" },
+  { value: "pcd", label: "Picard" },
+  { value: "nrf", label: "Guernésiais" },
+  { value: "jèr", label: "Jèrriais" },
+  { value: "sco", label: "Scots" },
+  { value: "gd", label: "Scottish Gaelic" },
+  { value: "kw", label: "Cornish" },
+  { value: "br", label: "Breton" },
+  { value: "gv", label: "Manx" },
 ];
+
+// Helper function to get language family
+const getLanguageFamily = (langCode: string): string => {
+  const languageFamilies: { [key: string]: string[] } = {
+    'germanic': ['en', 'de', 'nl', 'sv', 'da', 'no', 'is', 'af', 'fy', 'lb'],
+    'romance': ['es', 'fr', 'it', 'pt', 'ca', 'gl', 'oc', 'an', 'ast', 'ext', 'lad', 'wa', 'pcd', 'nrf', 'jèr', 'co', 'rm', 'fur', 'lld', 'vec', 'sc'],
+    'slavic': ['ru', 'pl', 'cs', 'sk', 'bg', 'hr', 'sr', 'sl', 'uk', 'be', 'bs', 'me', 'mk', 'sq'],
+    'baltic': ['lt', 'lv', 'et'],
+    'finnic': ['fi', 'et'],
+    'celtic': ['ga', 'cy', 'kw', 'br', 'gv', 'gd', 'sco'],
+    'semitic': ['ar', 'he', 'fa', 'ur', 'ps', 'ku', 'sd', 'so', 'am', 'ti', 'byn'],
+    'indo-aryan': ['hi', 'bn', 'ur', 'ta', 'te', 'kn', 'ml', 'gu', 'pa', 'mr', 'or', 'as', 'ne', 'si', 'my', 'km', 'lo', 'bo', 'dz'],
+    'turkic': ['tr', 'az', 'kk', 'ky', 'uz', 'tg', 'tk'],
+    'mongolic': ['mn'],
+    'caucasian': ['ka', 'hy'],
+    'austronesian': ['id', 'ms', 'sm', 'to', 'fj', 'haw', 'mi'],
+    'african': ['sw', 'yo', 'ig', 'zu', 'xh', 'sn', 'st', 'tn', 've', 'ts', 'ss', 'nr', 'nd', 'rw', 'ak', 'tw', 'ee', 'fon', 'ha', 'ff', 'wo', 'dyo', 'bem', 'ny'],
+    'sino-tibetan': ['zh', 'bo', 'dz'],
+    'japonic': ['ja'],
+    'koreanic': ['ko'],
+    'austroasiatic': ['vi', 'km', 'lo'],
+    'tai-kadai': ['th', 'lo'],
+    'dravidian': ['ta', 'te', 'kn', 'ml'],
+    'indo-iranian': ['hi', 'bn', 'ur', 'fa', 'ps', 'ku', 'sd', 'ne', 'si', 'my'],
+    'niger-congo': ['sw', 'yo', 'ig', 'zu', 'xh', 'sn', 'st', 'tn', 've', 'ts', 'ss', 'nr', 'nd', 'rw', 'ak', 'tw', 'ee', 'fon', 'ha', 'ff', 'wo', 'dyo', 'bem', 'ny'],
+    'afro-asiatic': ['ar', 'he', 'fa', 'ur', 'ps', 'ku', 'sd', 'so', 'am', 'ti', 'byn', 'ha'],
+    'uralic': ['fi', 'et', 'hu'],
+    'altaic': ['tr', 'az', 'kk', 'ky', 'uz', 'tg', 'tk', 'mn'],
+    'eskimo-aleut': ['iu'],
+    'na-dene': ['nv'],
+    'algonquian': ['oj', 'cr'],
+    'iroquoian': ['chr'],
+    'siouan': ['lkt'],
+    'uto-aztecan': ['nah'],
+    'mayan': ['quc'],
+    'quechuan': ['qu', 'ay'],
+    'arawak': ['gn'],
+    'tupi': ['gn'],
+    'carib': ['car'],
+    'pama-nyungan': ['arn'],
+    'polynesian': ['sm', 'to', 'fj', 'haw', 'mi'],
+    'melanesian': ['fj'],
+    'micronesian': ['haw'],
+    'papuan': ['tpi'],
+    'creole': ['ht'],
+    'pidgin': ['tpi'],
+    'constructed': ['eo', 'ia', 'vo'],
+    'sign': ['ase', 'bfi', 'bzs', 'cdo', 'csl', 'csn', 'dse', 'ecs', 'esl', 'fsl', 'gsg', 'gus', 'hab', 'hds', 'hks', 'hos', 'hps', 'icl', 'iks', 'ils', 'inl', 'ins', 'ise', 'isg', 'isr', 'jcs', 'jls', 'jos', 'jsl', 'jss', 'jus', 'kgi', 'kvk', 'kvx', 'lbs', 'lce', 'lcf', 'liw', 'lls', 'lsb', 'lsg', 'lsl', 'lsn', 'lso', 'lsp', 'lst', 'lsv', 'lsw', 'lws', 'lzh', 'max', 'mdl', 'meo', 'mfa', 'mfb', 'mfs', 'min', 'mnp', 'mqg', 'msd', 'msr', 'mui', 'mzc', 'mzg', 'mzy', 'nan', 'nbs', 'ncs', 'nsi', 'nsl', 'nsp', 'nsr', 'nzs', 'okl', 'orn', 'ors', 'pga', 'pgz', 'pks', 'prl', 'prz', 'psc', 'psd', 'pse', 'psg', 'psl', 'pso', 'psp', 'psr', 'pys', 'rms', 'rsl', 'rsm', 'sdl', 'sfb', 'sfs', 'sgg', 'sgx', 'shu', 'slf', 'sls', 'sqk', 'sqs', 'sqx', 'ssh', 'ssp', 'ssr', 'svk', 'swc', 'swh', 'syy', 'szs', 'tmw', 'tse', 'tsm', 'tsq', 'tss', 'tsy', 'ttj', 'tza', 'ugn', 'ugy', 'ukl', 'uks', 'urk', 'uzn', 'uzs', 'vgt', 'vsi', 'vsl', 'vsv', 'wuu', 'xki', 'xml', 'xms', 'yds', 'ygs', 'yhs', 'ysl', 'ysp', 'yue', 'zib', 'zlm', 'zmi', 'zsl', 'zsm', 'zsr', 'zxx', 'zza']
+  };
+  for (const [family, codes] of Object.entries(languageFamilies)) {
+    if (codes.includes(langCode)) {
+      return family;
+    }
+  }
+  return 'unknown';
+};
+
+// Helper function to get language script
+const getLanguageScript = (langCode: string): string => {
+  const scriptMap: { [key: string]: string } = {
+    // Latin script
+    'en': 'latin', 'es': 'latin', 'fr': 'latin', 'de': 'latin', 'it': 'latin', 'pt': 'latin', 'pl': 'latin', 'nl': 'latin', 'sv': 'latin', 'da': 'latin', 'no': 'latin', 'fi': 'latin', 'cs': 'latin', 'sk': 'latin', 'hu': 'latin', 'ro': 'latin', 'hr': 'latin', 'sl': 'latin', 'et': 'latin', 'lv': 'latin', 'lt': 'latin', 'mt': 'latin', 'ga': 'latin', 'cy': 'latin', 'is': 'latin', 'ca': 'latin', 'eu': 'latin', 'gl': 'latin', 'af': 'latin', 'sw': 'latin', 'yo': 'latin', 'ig': 'latin', 'zu': 'latin', 'xh': 'latin', 'tr': 'latin', 'vi': 'latin', 'id': 'latin', 'ms': 'latin', 'az': 'latin', 'uz': 'latin', 'tk': 'latin', 'sq': 'latin', 'bs': 'latin', 'me': 'latin', 'fy': 'latin', 'lb': 'latin', 'rm': 'latin', 'fo': 'latin', 'sm': 'latin', 'to': 'latin', 'fj': 'latin', 'haw': 'latin', 'mi': 'latin', 'qu': 'latin', 'ay': 'latin', 'gn': 'latin', 'ht': 'latin', 'jmc': 'latin', 'sn': 'latin', 'st': 'latin', 'tn': 'latin', 've': 'latin', 'ts': 'latin', 'ss': 'latin', 'nr': 'latin', 'nd': 'latin', 'rw': 'latin', 'ak': 'latin', 'tw': 'latin', 'ee': 'latin', 'fon': 'latin', 'ha': 'latin', 'ff': 'latin', 'wo': 'latin', 'dyo': 'latin', 'bem': 'latin', 'ny': 'latin', 'so': 'latin', 'om': 'latin', 'gsw': 'latin', 'fur': 'latin', 'lld': 'latin', 'vec': 'latin', 'sc': 'latin', 'co': 'latin', 'oc': 'latin', 'an': 'latin', 'ast': 'latin', 'ext': 'latin', 'lad': 'latin', 'wa': 'latin', 'pcd': 'latin', 'nrf': 'latin', 'jèr': 'latin', 'sco': 'latin', 'gd': 'latin', 'kw': 'latin', 'br': 'latin', 'gv': 'latin',
+    // Cyrillic script
+    'ru': 'cyrillic', 'bg': 'cyrillic', 'sr': 'cyrillic', 'uk': 'cyrillic', 'be': 'cyrillic', 'mk': 'cyrillic', 'mn': 'cyrillic', 'kk': 'cyrillic', 'ky': 'cyrillic', 'tg': 'cyrillic',
+    // Arabic script
+    'ar': 'arabic', 'ur': 'arabic', 'fa': 'arabic', 'ps': 'arabic', 'ku': 'arabic', 'sd': 'arabic',
+    // Hebrew script
+    'he': 'hebrew',
+    // Greek script
+    'el': 'greek',
+    // Chinese scripts
+    'zh': 'han', 'ja': 'kana', 'ko': 'hangul',
+    // Indian scripts
+    'hi': 'devanagari', 'mr': 'devanagari', 'ne': 'devanagari', 'bn': 'bengali', 'as': 'bengali', 'or': 'odia', 'ta': 'tamil', 'te': 'telugu', 'kn': 'kannada', 'ml': 'malayalam', 'gu': 'gujarati', 'pa': 'gurmukhi', 'si': 'sinhala',
+    // Southeast Asian scripts
+    'th': 'thai', 'my': 'myanmar', 'km': 'khmer', 'lo': 'lao',
+    // Other scripts
+    'ka': 'georgian', 'hy': 'armenian', 'bo': 'tibetan', 'dz': 'tibetan', 'am': 'ethiopic', 'ti': 'ethiopic', 'byn': 'ethiopic'
+  };
+  return scriptMap[langCode] || 'latin'; // Default to latin
+};
 
 const Index = () => {
   // Use the actual voice recognition hook
@@ -75,8 +291,28 @@ const Index = () => {
   const [rightAudioPlaying, setRightAudioPlaying] = useState(false);
 
   // Voice selection state for both panels
-  const [leftSelectedVoice, setLeftSelectedVoice] = useState<string>(() => localStorage.getItem("leftSelectedVoice") || "");
-  const [rightSelectedVoice, setRightSelectedVoice] = useState<string>(() => localStorage.getItem("rightSelectedVoice") || "");
+  const [leftSelectedVoice, _setLeftSelectedVoice] = useState<string>(() => localStorage.getItem("leftSelectedVoice") || "");
+  const [rightSelectedVoice, _setRightSelectedVoice] = useState<string>(() => localStorage.getItem("rightSelectedVoice") || "");
+  const [leftVoiceManuallySelected, setLeftVoiceManuallySelected] = useState(false);
+  const [rightVoiceManuallySelected, setRightVoiceManuallySelected] = useState(false);
+
+  // Wrap setters to track manual selection
+  const setLeftSelectedVoice = (voice: string, manual = false) => {
+    _setLeftSelectedVoice(voice);
+    if (manual) setLeftVoiceManuallySelected(true);
+  };
+  const setRightSelectedVoice = (voice: string, manual = false) => {
+    _setRightSelectedVoice(voice);
+    if (manual) setRightVoiceManuallySelected(true);
+  };
+
+  // Reset manual flag when language changes
+  useEffect(() => {
+    setLeftVoiceManuallySelected(false);
+  }, [leftLang]);
+  useEffect(() => {
+    setRightVoiceManuallySelected(false);
+  }, [rightLang]);
 
   // Auto-speak settings
   const [autoSpeak, setAutoSpeak] = useState<boolean>(() => localStorage.getItem("auto_speak") !== "false");
@@ -114,6 +350,41 @@ const Index = () => {
   useEffect(() => {
     localStorage.setItem("rightSelectedVoice", rightSelectedVoice);
   }, [rightSelectedVoice]);
+
+  // Auto-select appropriate voices when languages change
+  useEffect(() => {
+    const selectBestVoiceForLanguage = (langCode: string, setVoice: (voice: string) => void, manuallySelected: boolean) => {
+      if (manuallySelected) return; // Don't auto-select if user picked
+      if (window.speechSynthesis && window.speechSynthesis.getVoices) {
+        const voices = window.speechSynthesis.getVoices();
+        if (voices.length === 0) return;
+        let bestVoice = null;
+        bestVoice = voices.find(v => v.lang === langCode);
+        if (!bestVoice) bestVoice = voices.find(v => v.lang.startsWith(langCode));
+        if (!bestVoice) {
+          const langFamily = getLanguageFamily(langCode);
+          bestVoice = voices.find(v => {
+            const voiceLangFamily = getLanguageFamily(v.lang);
+            return voiceLangFamily === langFamily;
+          });
+        }
+        if (!bestVoice) {
+          const script = getLanguageScript(langCode);
+          bestVoice = voices.find(v => {
+            const voiceScript = getLanguageScript(v.lang);
+            return voiceScript === script;
+          });
+        }
+        if (!bestVoice) bestVoice = voices[0];
+        if (bestVoice) {
+          console.log(`[Index] Auto-selecting voice for ${langCode}:`, bestVoice.name, bestVoice.voiceURI);
+          setVoice(bestVoice.voiceURI);
+        }
+      }
+    };
+    selectBestVoiceForLanguage(leftLang, (v) => setLeftSelectedVoice(v, false), leftVoiceManuallySelected);
+    selectBestVoiceForLanguage(rightLang, (v) => setRightSelectedVoice(v, false), rightVoiceManuallySelected);
+  }, [leftLang, rightLang, leftVoiceManuallySelected, rightVoiceManuallySelected]);
 
   const handleAudioStart = () => {
     console.log("[Index] Audio playback started - mic should be muted", { recording, activeAudioSessions, wasRecordingBeforeAnyAudio, micButtonJustClicked });
@@ -356,6 +627,10 @@ const Index = () => {
           isAudioPlaying={activeAudioSessions > 0}
           showDebugWindow={showDebugWindow}
           setShowDebugWindow={setShowDebugWindow}
+          autoSpeak={autoSpeak}
+          setAutoSpeak={setAutoSpeak}
+          silenceTimeout={silenceTimeout}
+          setSilenceTimeout={setSilenceTimeout}
         />
         
         {/* Debug controls - only show in development */}

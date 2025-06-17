@@ -81,14 +81,22 @@ export class RealVoiceRecognizer {
     
     try {
       console.log("[RealVoiceRecognizer] Restarting recognition");
-      this.recognition.stop();
+      // Don't call stop() if recognition is already stopped or stopping
+      if (this.recognition && this.recognition.state !== 'inactive') {
+        this.recognition.stop();
+      }
       // Small delay to ensure clean stop
       setTimeout(() => {
         if (this.active) {
-          this.recognition.start();
-          this.restartAttempts = 0; // Reset attempts on successful restart
+          try {
+            this.recognition.start();
+            this.restartAttempts = 0; // Reset attempts on successful restart
+          } catch (e) {
+            console.error("[RealVoiceRecognizer] Error starting recognition:", e);
+            this.scheduleRestart();
+          }
         }
-      }, 100);
+      }, 200); // Increased delay to prevent rapid restarts
     } catch (e) {
       console.error("[RealVoiceRecognizer] Error restarting recognition:", e);
       this.scheduleRestart();
@@ -168,8 +176,18 @@ export class RealVoiceRecognizer {
 
     this.recognition.onerror = (event: any) => {
       console.error("[RealVoiceRecognizer] Error:", event.error);
-      if (event.error === 'no-speech' || event.error === 'audio-capture' || event.error === 'network') {
+      
+      // Handle different error types appropriately
+      if (event.error === 'aborted') {
+        // Aborted usually means we stopped it intentionally, don't restart
+        console.log("[RealVoiceRecognizer] Recognition aborted (likely intentional stop)");
+        return;
+      } else if (event.error === 'no-speech' || event.error === 'audio-capture' || event.error === 'network') {
+        // These errors are recoverable, try to restart
         this.scheduleRestart();
+      } else {
+        // For other errors, log but don't restart to prevent loops
+        console.log("[RealVoiceRecognizer] Non-recoverable error, not restarting:", event.error);
       }
     };
 
@@ -197,10 +215,19 @@ export class RealVoiceRecognizer {
   stop() {
     console.log("[RealVoiceRecognizer] Stopping recognition");
     this.clearTimeouts();
-    if (this.recognition && this.active) {
-      this.recognition.stop();
+    this.active = false; // Set active to false first to prevent restarts
+    
+    if (this.recognition) {
+      try {
+        // Only stop if not already stopped
+        if (this.recognition.state !== 'inactive') {
+          this.recognition.stop();
+        }
+      } catch (e) {
+        console.error("[RealVoiceRecognizer] Error stopping recognition:", e);
+      }
     }
-    this.active = false;
+    
     this.transcript = "";
     this.interimTranscript = "";
     this.restartAttempts = 0;

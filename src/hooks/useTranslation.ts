@@ -7,6 +7,28 @@ interface TranslationParams {
 }
 
 /**
+ * Clean text to prevent corruption of Unicode characters, especially for Tibetan
+ */
+function cleanTextForTranslation(text: string, fromLang: string, toLang: string): string {
+  // For Tibetan and other Unicode-heavy languages, ensure proper encoding
+  if (fromLang === 'bo' || toLang === 'bo') {
+    console.log("[useTranslation] Cleaning Tibetan text:", { original: text, length: text.length });
+    
+    // Remove any potential corruption markers that might be added by translation services
+    let cleaned = text
+      .replace(/[>\-]+/g, '') // Remove > and - characters that might be corruption markers
+      .replace(/།\s*།/g, '།') // Clean up duplicate Tibetan punctuation
+      .replace(/\s+/g, ' ') // Normalize whitespace
+      .trim();
+    
+    console.log("[useTranslation] Cleaned Tibetan text:", { cleaned, length: cleaned.length });
+    return cleaned;
+  }
+  
+  return text.trim();
+}
+
+/**
  * Hook for translating text using multiple translation APIs with fallbacks.
  * Supports OpenAI, MyMemory (free), LibreTranslate, and other services.
  */
@@ -31,7 +53,7 @@ export function useTranslation() {
         messages: [
           {
             role: "system",
-            content: `You are a professional translator. Translate the following text from ${params.from} to ${params.to}. Only return the translated text, nothing else.`
+            content: `You are a professional translator. Translate the following text from ${params.from} to ${params.to}. Only return the translated text, nothing else. For Tibetan (bo) language, ensure proper Unicode character preservation.`
           },
           {
             role: "user",
@@ -49,7 +71,8 @@ export function useTranslation() {
     }
 
     const data = await response.json();
-    return data.choices[0]?.message?.content?.trim() || "";
+    const result = data.choices[0]?.message?.content?.trim() || "";
+    return cleanTextForTranslation(result, params.from, params.to);
   }, []);
 
   const translateWithMyMemory = useCallback(async (params: TranslationParams): Promise<string> => {
@@ -65,7 +88,8 @@ export function useTranslation() {
     }
 
     const data = await response.json();
-    return data.responseData?.translatedText || data.responseData?.translation || "";
+    const result = data.responseData?.translatedText || data.responseData?.translation || "";
+    return cleanTextForTranslation(result, params.from, params.to);
   }, []);
 
   const translateWithLibreTranslate = useCallback(async (params: TranslationParams): Promise<string> => {
@@ -85,7 +109,8 @@ export function useTranslation() {
     }
 
     const data = await response.json();
-    return data.translatedText || "";
+    const result = data.translatedText || "";
+    return cleanTextForTranslation(result, params.from, params.to);
   }, []);
 
   const translate = useCallback(
@@ -96,6 +121,16 @@ export function useTranslation() {
       try {
         if (!params.text.trim()) return "";
 
+        // Clean input text
+        const cleanedInput = cleanTextForTranslation(params.text, params.from, params.to);
+        console.log("[useTranslation] Translation request:", { 
+          from: params.from, 
+          to: params.to, 
+          originalText: params.text,
+          cleanedInput,
+          isTibetan: params.from === 'bo' || params.to === 'bo'
+        });
+
         // Get the selected translation provider from settings
         const selectedProvider = localStorage.getItem("translation_provider") || "auto";
 
@@ -103,39 +138,39 @@ export function useTranslation() {
         if (selectedProvider === "openai") {
           try {
             console.log("[useTranslation] Using OpenAI (selected provider)");
-            const result = await translateWithOpenAI(params);
+            const result = await translateWithOpenAI({ ...params, text: cleanedInput });
             setLoading(false);
             return result;
           } catch (openaiError: any) {
             console.warn("[useTranslation] OpenAI translation failed:", openaiError.message);
             setLoading(false);
-            return `[OpenAI failed] ${params.text}`;
+            return `[OpenAI failed] ${cleanedInput}`;
           }
         }
 
         if (selectedProvider === "mymemory") {
           try {
             console.log("[useTranslation] Using MyMemory (selected provider)");
-            const result = await translateWithMyMemory(params);
+            const result = await translateWithMyMemory({ ...params, text: cleanedInput });
             setLoading(false);
             return result;
           } catch (memoryError: any) {
             console.warn("[useTranslation] MyMemory translation failed:", memoryError.message);
             setLoading(false);
-            return `[MyMemory failed] ${params.text}`;
+            return `[MyMemory failed] ${cleanedInput}`;
           }
         }
 
         if (selectedProvider === "libretranslate") {
           try {
             console.log("[useTranslation] Using LibreTranslate (selected provider)");
-            const result = await translateWithLibreTranslate(params);
+            const result = await translateWithLibreTranslate({ ...params, text: cleanedInput });
             setLoading(false);
             return result;
           } catch (libreError: any) {
             console.warn("[useTranslation] LibreTranslate translation failed:", libreError.message);
             setLoading(false);
-            return `[LibreTranslate failed] ${params.text}`;
+            return `[LibreTranslate failed] ${cleanedInput}`;
           }
         }
 
@@ -146,7 +181,7 @@ export function useTranslation() {
           if (openaiKey) {
             try {
               console.log("[useTranslation] Attempting OpenAI translation");
-              const result = await translateWithOpenAI(params);
+              const result = await translateWithOpenAI({ ...params, text: cleanedInput });
               setLoading(false);
               return result;
             } catch (openaiError: any) {
@@ -163,7 +198,7 @@ export function useTranslation() {
           // Try MyMemory as second option (free, no CORS issues)
           try {
             console.log("[useTranslation] Attempting MyMemory translation");
-            const result = await translateWithMyMemory(params);
+            const result = await translateWithMyMemory({ ...params, text: cleanedInput });
             setLoading(false);
             return result;
           } catch (memoryError) {
@@ -174,7 +209,7 @@ export function useTranslation() {
           // Try LibreTranslate as third option
           try {
             console.log("[useTranslation] Attempting LibreTranslate translation");
-            const result = await translateWithLibreTranslate(params);
+            const result = await translateWithLibreTranslate({ ...params, text: cleanedInput });
             setLoading(false);
             return result;
           } catch (libreError) {
@@ -185,7 +220,7 @@ export function useTranslation() {
 
         // Final fallback - return original text with note
         setLoading(false);
-        return `[Translation unavailable] ${params.text}`;
+        return `[Translation unavailable] ${cleanedInput}`;
         
       } catch (e: any) {
         setError(e.message || "Translation failed");
