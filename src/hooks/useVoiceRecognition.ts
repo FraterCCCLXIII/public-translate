@@ -1,4 +1,3 @@
-
 import { useRef, useState, useCallback } from "react";
 import { DemoRecognizer } from "@/lib/voice/DemoRecognizer";
 import { RealVoiceRecognizer } from "@/lib/voice/RealVoiceRecognizer";
@@ -41,12 +40,26 @@ export function useVoiceRecognition() {
     [leftLang, rightLang, translate]
   );
 
-  const start = () => {
+  const start = async () => {
     console.log("[useVoiceRecognition] start called. Attempting to start recognition...", {
       leftLang,
       rightLang,
       recording
     });
+
+    // Check for microphone permissions first
+    try {
+      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        console.log("[useVoiceRecognition] Requesting microphone permission...");
+        await navigator.mediaDevices.getUserMedia({ audio: true });
+        console.log("[useVoiceRecognition] Microphone permission granted");
+      }
+    } catch (error) {
+      console.error("[useVoiceRecognition] Microphone permission denied:", error);
+      alert("Microphone access is required for voice recognition. Please allow microphone access and try again.");
+      return;
+    }
+
     setRecording(true);
     const SpeechRecognitionCtor =
       (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
@@ -74,6 +87,7 @@ export function useVoiceRecognition() {
     } catch (e) {
       setRecording(false);
       console.error("[useVoiceRecognition] Error starting recognition", e);
+      alert("Failed to start voice recognition. Please check your microphone and try again.");
     }
   };
 

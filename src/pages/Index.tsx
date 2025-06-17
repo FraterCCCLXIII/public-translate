@@ -4,20 +4,6 @@ import NUX from "@/components/NUX";
 import TranscriptPanel from "@/components/TranscriptPanel";
 import { useVoiceRecognition } from "@/hooks/useVoiceRecognition";
 
-// Temporary dummy transcript with timestamps for demo
-const transcriptData = [
-  { text: "Hello", timestamp: "00:00:01" },
-  { text: "world!", timestamp: "00:00:02" },
-  { text: "How", timestamp: "00:00:03" },
-  { text: "are", timestamp: "00:00:03" },
-  { text: "you?", timestamp: "00:00:04" },
-];
-const translationData = [
-  { text: "こんにちは", timestamp: "00:00:01" },
-  { text: "世界！", timestamp: "00:00:02" },
-  { text: "元気ですか？", timestamp: "00:00:04" },
-];
-
 // Language metadata
 const LANGUAGES = [
   { value: "en", label: "English" },
@@ -29,7 +15,7 @@ const LANGUAGES = [
 ];
 
 const Index = () => {
-  // Use the voice recognition hook
+  // Use the actual voice recognition hook
   const {
     recording,
     result,
@@ -54,6 +40,18 @@ const Index = () => {
   const [leftVisible, setLeftVisible] = useState(true);
   const [rightVisible, setRightVisible] = useState(true);
 
+  // Debug: Check Web Speech API availability
+  useEffect(() => {
+    const SpeechRecognitionCtor = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    console.log("Web Speech API available:", !!SpeechRecognitionCtor);
+    
+    if (SpeechRecognitionCtor) {
+      console.log("SpeechRecognition constructor found");
+    } else {
+      console.warn("Web Speech API not available - will use demo mode");
+    }
+  }, []);
+
   // When NUX finishes, mark complete and hide
   const handleNUXFinish = () => {
     localStorage.setItem("nux_complete", "1");
@@ -67,8 +65,9 @@ const Index = () => {
     }
   }, [recording, showNUX]);
 
-  // Handle mic click to toggle recording
+  // Handle mic click - start/stop voice recognition
   const handleMicClick = () => {
+    console.log("Mic clicked, current recording state:", recording);
     if (recording) {
       stop();
     } else {
@@ -79,6 +78,10 @@ const Index = () => {
   // Helpers to get language labels
   const leftLabel = LANGUAGES.find(l => l.value === leftLang)?.label || leftLang;
   const rightLabel = LANGUAGES.find(l => l.value === rightLang)?.label || rightLang;
+
+  // Convert transcript and translation to the format expected by TranscriptPanel
+  const transcriptData = result.transcript ? [{ text: result.transcript, timestamp: "" }] : [];
+  const translationData = result.translation ? [{ text: result.translation, timestamp: "" }] : [];
 
   return (
     <>
@@ -113,7 +116,7 @@ const Index = () => {
             <div className="flex-1 min-w-0">
               <TranscriptPanel
                 title={leftLabel}
-                text={[{ text: result.transcript, timestamp: "" }]}
+                text={transcriptData}
                 align="left"
                 textSize={leftTextSize}
                 setTextSize={setLeftTextSize}
@@ -131,7 +134,7 @@ const Index = () => {
             <div className="flex-1 min-w-0">
               <TranscriptPanel
                 title={rightLabel}
-                text={[{ text: result.translation, timestamp: "" }]}
+                text={translationData}
                 align="right"
                 textSize={rightTextSize}
                 setTextSize={setRightTextSize}
