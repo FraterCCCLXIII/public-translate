@@ -30,7 +30,7 @@ function cleanTextForTranslation(text: string, fromLang: string, toLang: string)
 
 /**
  * Hook for translating text using multiple translation APIs with fallbacks.
- * Supports OpenAI, MyMemory (free), LibreTranslate, and other services.
+ * Supports OpenAI, MyMemory (free), LibreTranslate, Google Translate, and other services.
  */
 export function useTranslation() {
   const [loading, setLoading] = useState(false);
@@ -113,6 +113,25 @@ export function useTranslation() {
     return cleanTextForTranslation(result, params.from, params.to);
   }, []);
 
+  const translateWithGoogle = useCallback(async (params: TranslationParams): Promise<string> => {
+    // Use a simple Google Translate API endpoint (no API key required)
+    // This uses a public Google Translate service
+    const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${params.from}&tl=${params.to}&dt=t&q=${encodeURIComponent(params.text)}`;
+    
+    const response = await fetch(url, {
+      method: "GET",
+    });
+
+    if (!response.ok) {
+      throw new Error("Google Translate API unavailable");
+    }
+
+    const data = await response.json();
+    // Google Translate returns an array where the first element contains translation segments
+    const result = data[0]?.map((segment: any) => segment[0]).join("") || "";
+    return cleanTextForTranslation(result, params.from, params.to);
+  }, []);
+
   const translate = useCallback(
     async (params: TranslationParams): Promise<string> => {
       setLoading(true);
@@ -174,6 +193,19 @@ export function useTranslation() {
           }
         }
 
+        if (selectedProvider === "googletranslate") {
+          try {
+            console.log("[useTranslation] Using Google Translate (selected provider)");
+            const result = await translateWithGoogle({ ...params, text: cleanedInput });
+            setLoading(false);
+            return result;
+          } catch (googleError: any) {
+            console.warn("[useTranslation] Google Translate translation failed:", googleError.message);
+            setLoading(false);
+            return `[Google Translate failed] ${cleanedInput}`;
+          }
+        }
+
         // Auto mode - try providers in order
         if (selectedProvider === "auto") {
           // Try OpenAI first if API key is available
@@ -195,7 +227,18 @@ export function useTranslation() {
             }
           }
 
-          // Try MyMemory as second option (free, no CORS issues)
+          // Try Google Translate as second option (free, reliable)
+          try {
+            console.log("[useTranslation] Attempting Google Translate translation");
+            const result = await translateWithGoogle({ ...params, text: cleanedInput });
+            setLoading(false);
+            return result;
+          } catch (googleError) {
+            console.warn("[useTranslation] Google Translate translation failed:", googleError);
+            // Continue to next fallback
+          }
+
+          // Try MyMemory as third option (free, no CORS issues)
           try {
             console.log("[useTranslation] Attempting MyMemory translation");
             const result = await translateWithMyMemory({ ...params, text: cleanedInput });
@@ -206,7 +249,7 @@ export function useTranslation() {
             // Continue to next fallback
           }
 
-          // Try LibreTranslate as third option
+          // Try LibreTranslate as fourth option
           try {
             console.log("[useTranslation] Attempting LibreTranslate translation");
             const result = await translateWithLibreTranslate({ ...params, text: cleanedInput });
@@ -228,7 +271,7 @@ export function useTranslation() {
         return `[Translation error] ${params.text}`;
       }
     },
-    [translateWithOpenAI, translateWithMyMemory, translateWithLibreTranslate]
+    [translateWithOpenAI, translateWithMyMemory, translateWithLibreTranslate, translateWithGoogle]
   );
 
   return { translate, loading, error };

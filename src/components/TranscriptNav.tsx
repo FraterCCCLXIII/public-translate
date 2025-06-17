@@ -197,6 +197,7 @@ const LLM_MODELS = [
 
 const TRANSLATION_PROVIDERS = [
   { value: "openai", label: "OpenAI (Best Quality)" },
+  { value: "googletranslate", label: "Google Translate (Free, Reliable)" },
   { value: "mymemory", label: "MyMemory (Free, Reliable)" },
   { value: "libretranslate", label: "LibreTranslate (Open Source)" },
   { value: "auto", label: "Auto (Try All)" },
@@ -257,6 +258,9 @@ interface TranscriptNavProps {
   setAutoSpeak?: (enabled: boolean) => void;
   silenceTimeout?: number;
   setSilenceTimeout?: (timeout: number) => void;
+  transcriptHistory?: string[];
+  translationHistory?: string[];
+  handleDownload?: () => void;
 }
 
 const TranscriptNavInner: React.FC<TranscriptNavProps> = ({
@@ -284,6 +288,9 @@ const TranscriptNavInner: React.FC<TranscriptNavProps> = ({
   setAutoSpeak,
   silenceTimeout = 3000,
   setSilenceTimeout,
+  transcriptHistory = [],
+  translationHistory = [],
+  handleDownload,
 }) => {
   const [darkMode, setDarkMode] = React.useState(() =>
     document.documentElement.classList.contains("dark")
@@ -421,12 +428,6 @@ const TranscriptNavInner: React.FC<TranscriptNavProps> = ({
   // Transcript dialog
   const [showTranscript, setShowTranscript] = useState(false);
 
-  const handleDownload = () => {
-    const content = `--- ${LANGUAGES.find(l => l.value === leftLang)?.label || leftLang} ---\n${transcript}\n\n--- ${LANGUAGES.find(l => l.value === rightLang)?.label || rightLang} ---\n${translation}\n`;
-    const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
-    saveAs(blob, "transcript.txt");
-  };
-
   // NEW: Fullscreen handler (Maximize icon)
   const handleMaximize = () => {
     if (document.fullscreenElement) {
@@ -540,31 +541,18 @@ const TranscriptNavInner: React.FC<TranscriptNavProps> = ({
               <div className="flex flex-col md:flex-row gap-4 h-full overflow-auto">
                 <div className="flex-1 flex flex-col min-w-0">
                   <h4 className="font-semibold text-xs mb-1">{leftLabel}</h4>
-                  {/* TranscriptPanel for modal view with timestamps */}
-                  {/* @ts-ignore - Panel expects text prop type from parent */}
-                  <TranscriptPanel
-                    title={leftLabel}
-                    text={transcript}
-                    align="left"
-                    textSize={40}
-                    lang={leftLang}
-                    showTimestamps={true}
-                  />
+                  <div className="overflow-y-auto text-base" style={{whiteSpace:'pre-line'}}>
+                    {transcriptHistory.length > 0 ? transcriptHistory.map((line, i) => <div key={i}>{line}</div>) : <div className="text-gray-400">No transcript yet.</div>}
+                  </div>
                 </div>
                 <div className="flex-1 flex flex-col min-w-0">
                   <h4 className="font-semibold text-xs mb-1">{rightLabel}</h4>
-                  {/* @ts-ignore - Panel expects text prop type from parent */}
-                  <TranscriptPanel
-                    title={rightLabel}
-                    text={translation}
-                    align="right"
-                    textSize={40}
-                    lang={rightLang}
-                    showTimestamps={true}
-                  />
+                  <div className="overflow-y-auto text-base" style={{whiteSpace:'pre-line'}}>
+                    {translationHistory.length > 0 ? translationHistory.map((line, i) => <div key={i}>{line}</div>) : <div className="text-gray-400">No translation yet.</div>}
+                  </div>
                 </div>
               </div>
-              <Button onClick={handleDownload} className="w-full mt-2" variant="default">Download</Button>
+              <Button onClick={handleDownload || (() => {})} className="w-full mt-2" variant="default">Download</Button>
             </div>
           </div>
         </Dialog>
@@ -781,7 +769,8 @@ const TranscriptNavInner: React.FC<TranscriptNavProps> = ({
                   ))}
                 </select>
                 <div className="text-xs text-gray-500 mt-1">
-                  {translationProvider === "auto" && "Will try OpenAI first, then MyMemory, then LibreTranslate"}
+                  {translationProvider === "auto" && "Will try OpenAI first, then Google Translate, then MyMemory, then LibreTranslate"}
+                  {translationProvider === "googletranslate" && "Free Google Translate service, no API key required"}
                   {translationProvider === "mymemory" && "Free translation service, no API key required"}
                   {translationProvider === "libretranslate" && "Open source translation service"}
                   {translationProvider === "openai" && "Requires OpenAI API key for best quality"}

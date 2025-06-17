@@ -1,73 +1,100 @@
-# Welcome to your Lovable project
+# Public:Translate 言語機
 
-## Project info
+## Purpose & Vision
 
-**URL**: https://lovable.dev/projects/71127e48-2cb9-4c4e-a67f-bb5571ca15ca
+**Public:Translate** is an open-source voice translation and display tool designed to foster greater cross-cultural dialogue—especially around religion, philosophy, and the dharma. The concept was born from the author's own experience needing a translator while speaking with Japanese monks and priests in Japan. This app is designed to make such conversations accessible, even when a human translator is not present.
 
-## How can I edit this code?
+**Key Use Case:**
+- Display and read live speech and its translation to an audience (e.g., in a classroom, temple, or public talk).
+- Cast the app to a TV or use on any screen for group viewing.
+- Support for both text display and text-to-speech playback.
 
-There are several ways of editing your application.
+## Features
+- Live voice-to-text transcription and translation between 150+ languages.
+- Auto-playback of translated text using speech synthesis.
+- Responsive, accessible UI for use on desktop, mobile, or TV.
+- Language-specific text alignment (LTR, RTL, CJK).
+- Full transcript view and download (collated input/translation pairs).
+- Settings for translation provider, TTS, and more.
 
-**Use Lovable**
+## Project Structure
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/71127e48-2cb9-4c4e-a67f-bb5571ca15ca) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+```
+public-translate/
+├── src/
+│   ├── components/         # React UI components (TranscriptNav, TranscriptPanel, etc.)
+│   ├── hooks/              # Custom React hooks (e.g., useTranslation)
+│   ├── pages/              # Main app entry (Index.tsx)
+│   ├── lib/                # Utility functions (e.g., voice, language helpers)
+│   ├── index.css           # Global styles
+│   └── App.tsx             # App root
+├── public/                 # Static assets
+├── package.json            # Dependencies and scripts
+├── vite.config.ts          # Vite config
+└── README.md               # This file
 ```
 
-**Edit a file directly in GitHub**
+## Installation
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+1. **Clone the repository:**
+   ```sh
+   git clone https://github.com/your-username/public-translate.git
+   cd public-translate
+   ```
+2. **Install dependencies:**
+   ```sh
+   npm install
+   ```
+3. **Start the development server:**
+   ```sh
+   npm run dev
+   ```
+4. **Open in your browser:**
+   Visit [http://localhost:8080](http://localhost:8080) (or the next available port).
 
-**Use GitHub Codespaces**
+## Usage
+- Click the mic button to start/stop recording.
+- Select source and target languages.
+- The left panel shows your spoken language; the right panel shows the translation.
+- Use the speaker icon to play back the transcript with text-to-speech.
+- Open the full transcript modal to view or download the session transcript (input and translation collated).
+- Cast your browser tab or window to a TV for group display.
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## Contributing
 
-## What technologies are used for this project?
+Contributions are welcome! To contribute:
+1. Fork the repository.
+2. Create a new branch for your feature or fix.
+3. Make your changes with clear, descriptive commits.
+4. Ensure code is linted and tested.
+5. Open a pull request with a clear description of your changes.
 
-This project is built with:
+**Guidelines:**
+- Follow SOLID principles and keep code modular and maintainable.
+- Prefer reusing and extending existing components.
+- Ensure accessibility and responsive design.
+- Use strong types (TypeScript), and add tests for core logic.
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+## Roadmap
 
-## How can I deploy this project?
+- [ ] **Multi-speaker support:**
+  - Attribute transcript lines to different speakers.
+  - Visual separation and color-coding for speakers.
+- [ ] **Improved speech synthesis:**
+  - More natural, expressive TTS voices.
+  - Custom voice selection and tuning.
+- [ ] **Session saving and history:**
+  - Save and load past session transcripts.
+  - Export/import session data.
+- [ ] **Better punctuation and formatting:**
+  - Smarter sentence segmentation and punctuation restoration.
+- [ ] **Mobile/TV optimizations:**
+  - Enhanced UI for large screens and touch devices.
 
-Simply open [Lovable](https://lovable.dev/projects/71127e48-2cb9-4c4e-a67f-bb5571ca15ca) and click on Share -> Publish.
+## License
 
-## Can I connect a custom domain to my Lovable project?
+MIT — see [LICENSE](LICENSE) for details.
 
-Yes, you can!
+---
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+**Public:Translate 言語機** — Bridging cultures, one conversation at a time.

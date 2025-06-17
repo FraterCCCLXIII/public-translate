@@ -5,6 +5,7 @@ import TranscriptPanel from "@/components/TranscriptPanel";
 import { useVoiceRecognition } from "@/hooks/useVoiceRecognition";
 import { useTranslation } from "@/hooks/useTranslation";
 import { useAutoPlayOnSilence } from "@/hooks/useAutoPlayOnSilence";
+import { saveAs } from 'file-saver';
 
 // Language metadata
 const LANGUAGES = [
@@ -598,6 +599,26 @@ const Index = () => {
   const transcriptData = result.transcript ? [{ text: result.transcript, timestamp: "" }] : [];
   const translationData = result.translation ? [{ text: result.translation, timestamp: "" }] : [];
 
+  const [transcriptHistory, setTranscriptHistory] = useState<string[]>([]);
+  const [translationHistory, setTranslationHistory] = useState<string[]>([]);
+
+  // When you get a new transcript/translation (replace where result.transcript/result.translation is set):
+  useEffect(() => {
+    if (result.transcript) setTranscriptHistory(prev => [...prev, result.transcript]);
+    if (result.translation) setTranslationHistory(prev => [...prev, result.translation]);
+  }, [result.transcript, result.translation]);
+
+  // For download, collate input/translation pairs:
+  const handleDownload = () => {
+    let content = '';
+    for (let i = 0; i < Math.max(transcriptHistory.length, translationHistory.length); i++) {
+      if (transcriptHistory[i]) content += transcriptHistory[i] + '\n';
+      if (translationHistory[i]) content += translationHistory[i] + '\n';
+    }
+    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+    saveAs(blob, 'transcript.txt');
+  };
+
   return (
     <>
       {/* NUX overlays UI, but bottom controls are always visible */}
@@ -622,8 +643,10 @@ const Index = () => {
           rightVisible={rightVisible}
           setLeftVisible={setLeftVisible}
           setRightVisible={setRightVisible}
-          transcript={result.transcript}
-          translation={result.translation}
+          transcript={transcriptHistory.join('\n')}
+          translation={translationHistory.join('\n')}
+          transcriptHistory={transcriptHistory}
+          translationHistory={translationHistory}
           isAudioPlaying={activeAudioSessions > 0}
           showDebugWindow={showDebugWindow}
           setShowDebugWindow={setShowDebugWindow}

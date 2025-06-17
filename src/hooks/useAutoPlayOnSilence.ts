@@ -203,7 +203,7 @@ export function useAutoPlayOnSilence({
             utter.onend = () => {
               console.log("[useAutoPlayOnSilence] Auto-play ended");
               if (isMountedRef.current) {
-                setAudioPlaying(false);
+              setAudioPlaying(false);
                 isAutoPlayingRef.current = false;
                 micReactivatedRef.current = true; // Mark that mic has been reactivated
                 onAudioEnd?.(); // Notify that audio has ended (for mic unmuting)
@@ -212,7 +212,7 @@ export function useAutoPlayOnSilence({
             utter.onerror = (error) => {
               console.error("[useAutoPlayOnSilence] Auto-play error:", error);
               if (isMountedRef.current) {
-                setAudioPlaying(false);
+              setAudioPlaying(false);
                 isAutoPlayingRef.current = false;
                 onAudioEnd?.(); // Notify that audio has ended (for mic unmuting)
               }
