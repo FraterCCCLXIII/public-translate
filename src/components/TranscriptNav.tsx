@@ -111,6 +111,9 @@ interface TranscriptNavProps {
   translation: string;
   navVisible?: boolean;
   setNavVisible?: (b: boolean) => void;
+  isAudioPlaying?: boolean;
+  showDebugWindow?: boolean;
+  setShowDebugWindow?: (show: boolean) => void;
 }
 
 const TranscriptNavInner: React.FC<TranscriptNavProps> = ({
@@ -131,6 +134,9 @@ const TranscriptNavInner: React.FC<TranscriptNavProps> = ({
   translation,
   navVisible = true,
   setNavVisible,
+  isAudioPlaying = false,
+  showDebugWindow = false,
+  setShowDebugWindow,
 }) => {
   const [darkMode, setDarkMode] = React.useState(() =>
     document.documentElement.classList.contains("dark")
@@ -147,35 +153,78 @@ const TranscriptNavInner: React.FC<TranscriptNavProps> = ({
   // Add: notify parent about visibility so they can control RecordingDot
   const [visible, setVisible] = useState(true);
   const hideTimer = useRef<NodeJS.Timeout | null>(null);
+  const wasRecordingRef = useRef(recording);
+  const justFromAudioPlaybackRef = useRef(false);
+  
   useEffect(() => {
-    if (!recording) {
-      setVisible(true);
-      setNavVisible?.(true);
-      return;
+    console.log("[TranscriptNav] Visibility effect triggered:", { recording, isAudioPlaying, visible, wasRecording: wasRecordingRef.current, justFromAudio: justFromAudioPlaybackRef.current });
+    
+    // Clear any existing timer
+    if (hideTimer.current) {
+      clearTimeout(hideTimer.current);
+      hideTimer.current = null;
     }
-    const handle = () => {
+
+    // Track if we just came from audio playback
+    if (isAudioPlaying) {
+      justFromAudioPlaybackRef.current = true;
+    }
+
+    // Only show controls when recording stops due to user action (not audio playback)
+    // Check if we just stopped recording (was recording before, not recording now)
+    if (wasRecordingRef.current && !recording && !isAudioPlaying) {
+      console.log("[TranscriptNav] Recording stopped by user action - showing controls");
       setVisible(true);
       setNavVisible?.(true);
+    }
+
+    // If recording starts after audio playback, don't show controls automatically
+    if (!wasRecordingRef.current && recording && justFromAudioPlaybackRef.current) {
+      console.log("[TranscriptNav] Recording started after audio playback - keeping controls hidden");
+      setVisible(false);
+      setNavVisible?.(false);
+      // Reset the flag after a short delay to allow normal behavior
+      setTimeout(() => {
+        justFromAudioPlaybackRef.current = false;
+      }, 1000);
+    }
+
+    // Update the ref to track recording state changes
+    wasRecordingRef.current = recording;
+    
+    // If not recording and audio is playing, don't change visibility
+    // Let it stay in its current state (hidden if it was hidden)
+    console.log("[TranscriptNav] Not recording and audio playing - maintaining current visibility state");
+  }, [recording, isAudioPlaying, setNavVisible]);
+  
+  // Mouse movement handler that always shows controls (regardless of audio state)
+  useEffect(() => {
+    const handleMouseMove = () => {
+      console.log("[TranscriptNav] Mouse movement - showing controls");
+      setVisible(true);
+      setNavVisible?.(true);
+      
+      // Set up auto-hide timer
       if (hideTimer.current) clearTimeout(hideTimer.current);
       hideTimer.current = setTimeout(() => {
+        console.log("[TranscriptNav] Auto-hiding controls after mouse movement timeout");
         setVisible(false);
         setNavVisible?.(false);
       }, 3000);
     };
-    window.addEventListener("mousemove", handle);
-    window.addEventListener("touchstart", handle);
-    handle();
+
+    // Always listen for mouse movement to show controls
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("touchstart", handleMouseMove);
+    
     return () => {
-      window.removeEventListener("mousemove", handle);
-      window.removeEventListener("touchstart", handle);
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("touchstart", handleMouseMove);
       if (hideTimer.current) clearTimeout(hideTimer.current);
     };
-  }, [recording, setNavVisible]);
+  }, [setNavVisible]);
+  
   const navRef = useRef<HTMLDivElement>(null);
-  const handleMouseEnter = () => {
-    setVisible(true);
-    setNavVisible?.(true);
-  };
 
   // About Modal state
   const [aboutOpen, setAboutOpen] = useState(false);
@@ -254,7 +303,12 @@ const TranscriptNavInner: React.FC<TranscriptNavProps> = ({
   const leftLabel = LANGUAGES.find(l => l.value === leftLang)?.label || leftLang;
   const rightLabel = LANGUAGES.find(l => l.value === rightLang)?.label || rightLang;
 
-  //
+  const handleMouseEnter = () => {
+    // Always show controls on mouse enter (including during audio playback)
+    console.log("[TranscriptNav] Mouse enter - showing controls");
+    setVisible(true);
+    setNavVisible?.(true);
+  };
 
   return (
     <>
@@ -633,6 +687,30 @@ const TranscriptNavInner: React.FC<TranscriptNavProps> = ({
                 </select>
                 <span className="text-xs text-gray-400">{t("ui_language_help")}</span>
               </div>
+              
+              {/* Debug Window Toggle */}
+              {process.env.NODE_ENV === "development" && (
+                <div>
+                  <label className="font-bold text-xs text-gray-700">Debug Window</label>
+                  <div className="flex items-center gap-2 mt-1">
+                    <input
+                      type="checkbox"
+                      id="showDebugWindow"
+                      checked={showDebugWindow}
+                      onChange={e => {
+                        setShowDebugWindow?.(e.target.checked);
+                        localStorage.setItem("debug_window_visible", e.target.checked.toString());
+                      }}
+                      className="rounded"
+                    />
+                    <label htmlFor="showDebugWindow" className="text-xs">Show debug window</label>
+                  </div>
+                  <div className="text-xs text-gray-500 mt-1">
+                    Shows debug information and test controls
+                  </div>
+                </div>
+              )}
+              
               {/* Move Save button to end */}
               <Button onClick={saveSettings} className="w-full" variant="default">{t("save")}</Button>
             </div>

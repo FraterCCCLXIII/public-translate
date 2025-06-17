@@ -84,37 +84,68 @@ const TranscriptPanel: React.FC<TranscriptPanelProps> = ({
   const setReverseOrder = alignState ? alignState.setReverseOrder : () => {};
 
   const handleAlignToggle = () => {
-    setCurrentAlign(currentAlign === "left" ? "right" : "left");
-    setReverseOrder(!reverseOrder);
+    const newAlign = currentAlign === "left" ? "right" : "left";
+    console.log("[TranscriptPanel] Alignment toggle:", {
+      title,
+      lang,
+      canReorderCharacters: canReorderCharacters(lang),
+      oldAlign: currentAlign,
+      newAlign
+    });
+    setCurrentAlign(newAlign);
+    
+    // For character-reorderable languages, the reordering is handled in the useEffect
+    // based on currentAlign, so we don't need to set reverseOrder here
+    // The useEffect will automatically reorder the text when currentAlign changes
   };
 
   // Accept both string and array input, and only reorder for character-reorderable languages!
   useEffect(() => {
-    // 1. Parse words
     let curWords: TranscriptWord[] = [];
+    
+    // Extract the actual text content, whether it's a string or array
+    let textContent = "";
     if (Array.isArray(text)) {
-      curWords = [...text];
-    } else if (/[\u4E00-\u9FFF\u3040-\u30FF]/.test(lang || "")) {
-      curWords = text.split("").map(t => ({ text: t }));
+      textContent = text.map(w => w.text).join(" ");
     } else {
-      curWords = text.trim().split(/\s+/).filter(Boolean).map(t => ({ text: t }));
+      textContent = text;
+    }
+    
+    // Debug logging for character reordering
+    console.log("[TranscriptPanel] Text processing:", {
+      title,
+      lang,
+      canReorderCharacters: canReorderCharacters(lang),
+      currentAlign,
+      textContent,
+      isArray: Array.isArray(text)
+    });
+    
+    if (canReorderCharacters(lang)) {
+      // Split into words (or treat as one word if no spaces/punctuation)
+      let words = textContent.split(/(\s+|[、。！？,.!?])/g).filter(Boolean);
+      // DO NOT reverse for CJK, just use as-is
+      curWords = words.map(t => ({ text: t }));
+    } else {
+      // For non-character-reorderable languages, preserve array structure if present
+      if (Array.isArray(text)) {
+        curWords = [...text];
+      } else {
+        curWords = textContent.trim().split(/\s+/).filter(Boolean).map(t => ({ text: t }));
+      }
     }
 
-    // 2. Reverse characters for reorderable languages only!
-    if (reverseOrder && canReorderCharacters(lang)) {
-      curWords = curWords.slice().reverse();
+    // 3. Get previous word list for animation
+    let prevWords: string[] = [];
+    if (canReorderCharacters(lang)) {
+      let prev = prevTextRef.current.split(/(\s+|[、。！？,.!?])/g).filter(Boolean);
+      // DO NOT reverse for CJK
+      prevWords = prev;
+    } else {
+      prevWords = prevTextRef.current.trim().split(/\s+/).filter(Boolean);
     }
 
-    // 3. Get previous word list
-    let prevWords: string[] =
-      /[\u4E00-\u9FFF\u3040-\u30FF]/.test(lang || "")
-        ? prevTextRef.current.split("")
-        : prevTextRef.current.trim().split(/\s+/).filter(Boolean);
-
-    if (reverseOrder && canReorderCharacters(lang)) {
-      prevWords = prevWords.slice().reverse();
-    }
-
+    // 4. Find where new content starts for animation
     let start = 0;
     while (
       start < curWords.length &&
@@ -124,6 +155,7 @@ const TranscriptPanel: React.FC<TranscriptPanelProps> = ({
       start++;
     }
     setDisplayedWords(curWords);
+    // 5. Set up animation for new words
     if (curWords.length > prevWords.length) {
       const newIndexes = [];
       for (let i = start; i < curWords.length; ++i) newIndexes.push(i);
@@ -132,10 +164,9 @@ const TranscriptPanel: React.FC<TranscriptPanelProps> = ({
     } else {
       setAnimatingWordIndexes([]);
     }
-    prevTextRef.current = Array.isArray(text)
-      ? text.map(w => w.text).join(" ")
-      : text;
-  }, [text, lang, reverseOrder]);
+    // 6. Update previous text reference
+    prevTextRef.current = textContent;
+  }, [text, lang, currentAlign]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -193,7 +224,35 @@ const TranscriptPanel: React.FC<TranscriptPanelProps> = ({
 
   // Header hover state for showing controls only on hover after recording
   const [isHovered, setIsHovered] = useState(false);
-  const showHeader = !isRecording || isHovered;
+  const isAudioPlaying = audioButtonProps?.playing || false;
+  const justFromAudioPlaybackRef = useRef(false);
+  
+  // Track if we just came from audio playback using useEffect
+  useEffect(() => {
+    if (isAudioPlaying) {
+      justFromAudioPlaybackRef.current = true;
+    } else if (justFromAudioPlaybackRef.current) {
+      // Reset the flag after a delay when not in audio playback
+      const timer = setTimeout(() => {
+        justFromAudioPlaybackRef.current = false;
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [isAudioPlaying]);
+  
+  // Don't show header if we just started recording after audio playback
+  const showHeader = (!isRecording && !isAudioPlaying && !justFromAudioPlaybackRef.current) || isHovered;
+  
+  // Debug logging
+  console.log("[TranscriptPanel] Header visibility:", {
+    title,
+    isRecording,
+    isAudioPlaying,
+    isHovered,
+    showHeader,
+    justFromAudio: justFromAudioPlaybackRef.current,
+    audioButtonPropsPlaying: audioButtonProps?.playing
+  });
 
   // Pill wrapper classes
   const pillClass = pillStyle
@@ -202,6 +261,17 @@ const TranscriptPanel: React.FC<TranscriptPanelProps> = ({
 
   // Direction for <span> (RTL/LTR)
   const spanDir = isRTL(lang) ? "rtl" : "ltr";
+  
+  // Text alignment logic based on language type
+  const getTextAlignClass = () => {
+    if (isRTL(lang)) {
+      // RTL languages: use currentAlign for text-align
+      return currentAlign === "left" ? "text-left" : "text-right";
+    } else {
+      // LTR and character-reorderable languages: use currentAlign for text-align
+      return currentAlign === "left" ? "text-left" : "text-right";
+    }
+  };
 
   return (
     <section
@@ -253,6 +323,7 @@ const TranscriptPanel: React.FC<TranscriptPanelProps> = ({
           onAudioPlayback={() => {}}
           audioPlaying={!!audioButtonProps?.playing}
           audioLoading={audioButtonProps?.disabled || false}
+          lang={lang}
           audioText={audioButtonProps?.text}
           audioLang={audioButtonProps?.lang}
           selectedVoice={audioButtonProps?.selectedVoice}
@@ -281,51 +352,67 @@ const TranscriptPanel: React.FC<TranscriptPanelProps> = ({
             fontSize: safeTextSize,
           }}
         >
-          <span
-            dir={spanDir}
-            className={`
-              block w-full
-              ${currentAlign === "left" ? "text-left" : "text-right"}
-              font-black leading-tight
-              opacity-100
-              transition-opacity
-              ${displayedWords.length === 0 ? "text-gray-300" : ""}
-            `}
-            style={{
-              fontSize: safeTextSize + "px",
-              wordBreak: "break-word",
-              lineHeight: 1.14,
-              minHeight: "2em",
-              fontWeight: 700
-            }}
-          >
-            {displayedWords.length === 0 ? (
-              <span className="text-gray-300">...</span>
-            ) : (
-              displayedWords.map((wordObj, i) => (
-                <span
-                  key={i + ":" + wordObj.text}
-                  className={`inline-block align-top relative
-                    ${animatingWordIndexes.includes(i) ? "fade-in-word" : ""}
-                  `}
-                  style={{
-                    opacity: animatingWordIndexes.includes(i) ? 0 : 1,
-                    animation: animatingWordIndexes.includes(i)
-                      ? "fade-in-opacity 1.2s forwards"
-                      : undefined,
-                    marginRight:
-                      (!reverseOrder && lang === "en") ? "0.25em"
-                        : (reverseOrder && lang === "en") ? "0.25em"
+          {/* CJK: Only change alignment, never reverse text */}
+          {canReorderCharacters(lang) ? (
+            <span
+              dir="ltr"
+              style={{
+                display: "block",
+                textAlign: currentAlign === "right" ? "right" : "left",
+                fontWeight: 700,
+                fontSize: safeTextSize + "px",
+                wordBreak: "break-word",
+                lineHeight: 1.14,
+                minHeight: "2em",
+                width: "100%",
+              }}
+            >
+              {displayedWords.map(w => w.text).join("")}
+            </span>
+          ) : (
+            <span
+              dir={spanDir}
+              className={`
+                block w-full
+                ${getTextAlignClass()}
+                font-black leading-tight
+                opacity-100
+                transition-opacity
+                ${displayedWords.length === 0 ? "text-gray-300" : ""}
+              `}
+              style={{
+                fontSize: safeTextSize + "px",
+                wordBreak: "break-word",
+                lineHeight: 1.14,
+                minHeight: "2em",
+                fontWeight: 700,
+              }}
+            >
+              {displayedWords.length === 0 ? (
+                <span className="text-gray-300">...</span>
+              ) : (
+                displayedWords.map((wordObj, i) => (
+                  <span
+                    key={i + ":" + wordObj.text}
+                    className={`inline-block align-top relative
+                      ${animatingWordIndexes.includes(i) ? "fade-in-word" : ""}
+                    `}
+                    style={{
+                      opacity: animatingWordIndexes.includes(i) ? 0 : 1,
+                      animation: animatingWordIndexes.includes(i)
+                        ? "fade-in-opacity 1.2s forwards"
                         : undefined,
-                    fontWeight: "inherit"
-                  }}
-                >
-                  {wordObj.text}
-                  {(!reverseOrder && lang === "en" && i !== displayedWords.length - 1) ? " " : ""}
-                </span>
-              ))
-            )}
-          </span>
+                      marginRight: canReorderCharacters(lang) ? "0" : "0.25em",
+                      fontWeight: "inherit"
+                    }}
+                  >
+                    {wordObj.text}
+                    {(!canReorderCharacters(lang) && i !== displayedWords.length - 1) ? " " : ""}
+                  </span>
+                ))
+              )}
+            </span>
+          )}
         </div>
         {/* Only render eye toggle if explicitly enabled (e.g. in modal), never in main columns now */}
         {showVisibilityToggle && typeof visible !== "undefined" && typeof setVisible === "function" && (

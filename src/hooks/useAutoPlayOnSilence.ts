@@ -47,6 +47,8 @@ export function useAutoPlayOnSilence({
   const isMountedRef = useRef<boolean>(true);
   const micButtonClickedTimeRef = useRef<number>(0);
   const lastPlayedTranslationRef = useRef<string>("");
+  const micReactivatedRef = useRef<boolean>(false);
+  const wasRecordingRef = useRef<boolean>(false);
 
   // Set mounted flag
   useEffect(() => {
@@ -85,6 +87,13 @@ export function useAutoPlayOnSilence({
     const micButtonRecentlyClicked = timeSinceMicClick < 3000; // 3 seconds
     const translationAlreadyPlayed = translation === lastPlayedTranslationRef.current;
     
+    // Reset mic reactivated flag when recording starts
+    if (isRecording && !wasRecordingRef.current) {
+      console.log("[useAutoPlayOnSilence] Recording started, resetting mic reactivated flag");
+      micReactivatedRef.current = false;
+    }
+    wasRecordingRef.current = isRecording;
+    
     if (!isRecording || !canAutoPlay || isAudioPlaying || !translation.trim() || isAutoPlayingRef.current || !isMountedRef.current || micButtonRecentlyClicked || translationAlreadyPlayed) {
       console.log("[useAutoPlayOnSilence] Conditions not met for auto-play", {
         isRecording,
@@ -108,6 +117,13 @@ export function useAutoPlayOnSilence({
       if (transcript && transcript.length > lastTranscriptRef.current.length) {
         console.log("[useAutoPlayOnSilence] New speech detected, resetting played translation");
         lastPlayedTranslationRef.current = "";
+        
+        // Clear transcript if mic was recently reactivated and this is new speech
+        if (micReactivatedRef.current) {
+          console.log("[useAutoPlayOnSilence] Clearing transcript after mic reactivation and new speech");
+          onTranscriptClear?.();
+          micReactivatedRef.current = false; // Reset the flag
+        }
       }
       
       lastTranscriptRef.current = transcript;
@@ -149,19 +165,12 @@ export function useAutoPlayOnSilence({
             setAudioPlaying(true);
             onAudioStart?.(); // Notify that audio is starting (for mic muting)
             
-            // Clear the transcript after a short delay to prevent showing old text
-            setTimeout(() => {
-              if (isMountedRef.current) {
-                console.log("[useAutoPlayOnSilence] Clearing transcript after auto-play start");
-                onTranscriptClear?.();
-              }
-            }, 500); // Small delay to ensure audio has started
-            
             utter.onend = () => {
               console.log("[useAutoPlayOnSilence] Auto-play ended");
               if (isMountedRef.current) {
                 setAudioPlaying(false);
                 isAutoPlayingRef.current = false;
+                micReactivatedRef.current = true; // Mark that mic has been reactivated
                 onAudioEnd?.(); // Notify that audio has ended (for mic unmuting)
               }
             };
@@ -216,19 +225,12 @@ export function useAutoPlayOnSilence({
               setAudioPlaying(true);
               onAudioStart?.();
               
-              // Clear the transcript after a short delay to prevent showing old text
-              setTimeout(() => {
-                if (isMountedRef.current) {
-                  console.log("[useAutoPlayOnSilence] Clearing transcript after auto-play start (stable)");
-                  onTranscriptClear?.();
-                }
-              }, 500); // Small delay to ensure audio has started
-              
               utter.onend = () => {
                 console.log("[useAutoPlayOnSilence] Auto-play ended");
                 if (isMountedRef.current) {
                   setAudioPlaying(false);
                   isAutoPlayingRef.current = false;
+                  micReactivatedRef.current = true; // Mark that mic has been reactivated
                   onAudioEnd?.();
                 }
               };
@@ -279,19 +281,12 @@ export function useAutoPlayOnSilence({
               setAudioPlaying(true);
               onAudioStart?.();
               
-              // Clear the transcript after a short delay to prevent showing old text
-              setTimeout(() => {
-                if (isMountedRef.current) {
-                  console.log("[useAutoPlayOnSilence] Clearing transcript after auto-play start (remaining)");
-                  onTranscriptClear?.();
-                }
-              }, 500); // Small delay to ensure audio has started
-              
               utter.onend = () => {
                 console.log("[useAutoPlayOnSilence] Auto-play ended");
                 if (isMountedRef.current) {
                   setAudioPlaying(false);
                   isAutoPlayingRef.current = false;
+                  micReactivatedRef.current = true; // Mark that mic has been reactivated
                   onAudioEnd?.();
                 }
               };

@@ -2,6 +2,17 @@ import React from "react";
 import { AlignLeft, AlignRight } from "lucide-react";
 import AudioPlaybackButton from "./AudioPlaybackButton";
 
+// Language detection functions
+const RTL_LANGS = new Set(["ar", "he", "fa", "ur"]);
+function isRTL(lang: string) {
+  return RTL_LANGS.has(lang);
+}
+
+const CHAR_REORDERABLE_LANGS = new Set(["ja", "zh", "ko"]);
+function canReorderCharacters(lang: string) {
+  return CHAR_REORDERABLE_LANGS.has(lang);
+}
+
 interface TranscriptPanelControlsProps {
   align: "left" | "right";
   onToggleAlign: () => void;
@@ -9,6 +20,7 @@ interface TranscriptPanelControlsProps {
   onAudioPlayback: () => void;
   audioPlaying: boolean;
   audioLoading: boolean;
+  lang?: string;
 
   // New props for AudioPlaybackButton
   audioText?: string;
@@ -33,7 +45,9 @@ const TranscriptPanelControls: React.FC<TranscriptPanelControlsProps> = ({
   setPlaying = () => {},
   onPlaybackStart,
   onPlaybackEnd,
+  lang = "en",
 }) => {
+  // Determine which icon to show based on current alignment
   const AlIcon = align === "left" ? AlignLeft : AlignRight;
 
   // Let AudioPlaybackButton always be enabled for popover;

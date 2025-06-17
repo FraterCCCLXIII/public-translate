@@ -39,12 +39,32 @@ const Index = () => {
 
   // Determine if user has completed NUX
   const [showNUX, setShowNUX] = useState(() => {
-    return localStorage.getItem("nux_complete") !== "1";
+    return localStorage.getItem("nux_completed") !== "true";
+  });
+
+  // Debug window state - default to hidden
+  const [showDebugWindow, setShowDebugWindow] = useState(() => {
+    return localStorage.getItem("debug_window_visible") === "true";
   });
 
   // Per-panel text size state
   const [leftTextSize, setLeftTextSize] = useState(40);
   const [rightTextSize, setRightTextSize] = useState(40);
+
+  // Panel alignment state
+  const [leftAlign, setLeftAlign] = useState<"left" | "right">("left");
+  const [rightAlign, setRightAlign] = useState<"left" | "right">("left");
+  const [leftReverseOrder, setLeftReverseOrder] = useState(false);
+  const [rightReverseOrder, setRightReverseOrder] = useState(false);
+
+  // Debug logging for alignment state
+  useEffect(() => {
+    console.log("[Index] Left alignment changed:", { leftAlign, leftLang, canReorderCharacters: leftLang === "ja" });
+  }, [leftAlign, leftLang]);
+
+  useEffect(() => {
+    console.log("[Index] Right alignment changed:", { rightAlign, rightLang, canReorderCharacters: rightLang === "ja" });
+  }, [rightAlign, rightLang]);
 
   // Panel visibility state
   const [leftVisible, setLeftVisible] = useState(true);
@@ -333,10 +353,13 @@ const Index = () => {
           setRightVisible={setRightVisible}
           transcript={result.transcript}
           translation={result.translation}
+          isAudioPlaying={activeAudioSessions > 0}
+          showDebugWindow={showDebugWindow}
+          setShowDebugWindow={setShowDebugWindow}
         />
         
         {/* Debug controls - only show in development */}
-        {process.env.NODE_ENV === "development" && (
+        {showDebugWindow && (
           <div className="fixed bottom-4 right-4 z-50 bg-white dark:bg-gray-800 p-4 rounded-lg shadow-lg border">
             <h3 className="text-sm font-bold mb-2">Debug Controls</h3>
             <button
@@ -363,7 +386,7 @@ const Index = () => {
         )}
         
         {/* Render transcript panels as main content */}
-        <div className="flex flex-row gap-4 w-full max-w-6xl mx-auto mt-6">
+        <div className="flex flex-row gap-4 w-full max-w-6xl mx-auto mt-6 px-4">
           {leftVisible && (
             <div className="flex-1 min-w-0">
               <TranscriptPanel
@@ -379,9 +402,15 @@ const Index = () => {
                 isRecording={recording}
                 visible={leftVisible}
                 setVisible={setLeftVisible}
+                alignState={{
+                  currentAlign: leftAlign,
+                  setCurrentAlign: setLeftAlign,
+                  reverseOrder: leftReverseOrder,
+                  setReverseOrder: setLeftReverseOrder,
+                }}
                 audioButtonProps={{
                   text: result.transcript,
-                  playing: leftAudioPlaying,
+                  playing: leftAudioPlaying || activeAudioSessions > 0,
                   setPlaying: setLeftAudioPlaying,
                   lang: leftLang,
                   onPlaybackStart: () => {
@@ -456,9 +485,15 @@ const Index = () => {
                 isRecording={recording}
                 visible={rightVisible}
                 setVisible={setRightVisible}
+                alignState={{
+                  currentAlign: rightAlign,
+                  setCurrentAlign: setRightAlign,
+                  reverseOrder: rightReverseOrder,
+                  setReverseOrder: setRightReverseOrder,
+                }}
                 audioButtonProps={{
                   text: result.translation,
-                  playing: rightAudioPlaying,
+                  playing: rightAudioPlaying || activeAudioSessions > 0,
                   setPlaying: setRightAudioPlaying,
                   lang: rightLang,
                   onPlaybackStart: () => {
