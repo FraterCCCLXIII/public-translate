@@ -16,6 +16,7 @@ export class RealVoiceRecognizer {
   private readonly MAX_RESTART_ATTEMPTS = 3;
   private restartAttempts = 0;
   private lastTranslationTime = 0;
+  private lastTranslatedText = ""; // Track the last text we translated
 
   private clearTimeouts() {
     if (this.restartTimeout) {
@@ -35,7 +36,7 @@ export class RealVoiceRecognizer {
       this.restartTimeout = setTimeout(() => {
         this.restartAttempts++;
         this.restartRecognition();
-      }, this.RESTART_DELAY);
+      }, this.RESTART_DELAY * (this.restartAttempts + 1)); // Exponential backoff
     } else if (this.restartAttempts >= this.MAX_RESTART_ATTEMPTS) {
       console.log("[RealVoiceRecognizer] Max restart attempts reached, stopping recognition");
       this.stop();
@@ -45,19 +46,32 @@ export class RealVoiceRecognizer {
   private scheduleTranslation(finalTranscript: string) {
     this.clearTimeouts();
     const now = Date.now();
+    console.log("[RealVoiceRecognizer] Scheduling translation for:", finalTranscript);
+    
     if (now - this.lastTranslationTime < this.TRANSLATION_DELAY) {
       // If we've translated recently, schedule a new translation
+      console.log("[RealVoiceRecognizer] Translation scheduled with delay");
       this.translationTimeout = setTimeout(() => {
         this.performTranslation(finalTranscript);
       }, this.TRANSLATION_DELAY);
     } else {
       // Otherwise translate immediately
+      console.log("[RealVoiceRecognizer] Translating immediately");
       this.performTranslation(finalTranscript);
     }
   }
 
   private async performTranslation(finalTranscript: string) {
-    if (!finalTranscript.trim()) return;
+    if (!finalTranscript.trim()) {
+      console.log("[RealVoiceRecognizer] Empty transcript, skipping translation");
+      return;
+    }
+    
+    // Check if we've already translated this exact text
+    if (finalTranscript === this.lastTranslatedText) {
+      console.log("[RealVoiceRecognizer] Already translated this text, skipping:", finalTranscript);
+      return;
+    }
     
     try {
       console.log("[RealVoiceRecognizer] Translating:", finalTranscript);
@@ -67,12 +81,21 @@ export class RealVoiceRecognizer {
         to: this.rightLang,
       });
       this.lastTranslationTime = Date.now();
+      this.lastTranslatedText = finalTranscript; // Mark this text as translated
+      console.log("[RealVoiceRecognizer] Translation result:", translation);
+      
+      // Always send the result, even if translation is empty
       this.onResult({
         transcript: this.transcript,
-        translation,
+        translation: translation || "Translation failed",
       });
     } catch (error) {
       console.error("[RealVoiceRecognizer] Translation error:", error);
+      // Send result with error message
+      this.onResult({
+        transcript: this.transcript,
+        translation: `[Translation error: ${error}]`,
+      });
     }
   }
 
@@ -85,7 +108,7 @@ export class RealVoiceRecognizer {
       if (this.recognition && this.recognition.state !== 'inactive') {
         this.recognition.stop();
       }
-      // Small delay to ensure clean stop
+      // Longer delay to ensure clean stop
       setTimeout(() => {
         if (this.active) {
           try {
@@ -96,7 +119,7 @@ export class RealVoiceRecognizer {
             this.scheduleRestart();
           }
         }
-      }, 200); // Increased delay to prevent rapid restarts
+      }, 500); // Increased delay to prevent rapid restarts
     } catch (e) {
       console.error("[RealVoiceRecognizer] Error restarting recognition:", e);
       this.scheduleRestart();
@@ -155,23 +178,28 @@ export class RealVoiceRecognizer {
 
       // Update the transcript with final results
       if (finalTranscript) {
+        const previousTranscript = this.transcript;
         this.transcript = this.normalizeTranscript(this.transcript + " " + finalTranscript);
         console.log("[RealVoiceRecognizer] Final transcript updated:", this.transcript);
-        // Schedule translation for final results
-        this.scheduleTranslation(this.transcript);
+        console.log("[RealVoiceRecognizer] Previous transcript:", previousTranscript);
+        
+        // Only schedule translation if we have new final content
+        if (this.transcript !== previousTranscript) {
+          this.scheduleTranslation(this.transcript);
+        }
       }
 
       // Combine final and interim results for display
       const displayTranscript = this.normalizeTranscript(this.transcript + " " + interimTranscript);
       console.log("[RealVoiceRecognizer] Display transcript:", displayTranscript);
 
-      // Update UI with interim results immediately
-      if (interimTranscript) {
-        this.onResult({
-          transcript: displayTranscript,
-          translation: "", // Don't update translation for interim results
-        });
-      }
+      // Send the current transcript and translation to UI
+      // For interim results, show "Translating..." if we have final content but no translation yet
+      const translationStatus = this.transcript && !interimTranscript ? "Translating..." : "";
+      this.onResult({
+        transcript: displayTranscript,
+        translation: translationStatus,
+      });
     };
 
     this.recognition.onerror = (event: any) => {
@@ -182,8 +210,20 @@ export class RealVoiceRecognizer {
         // Aborted usually means we stopped it intentionally, don't restart
         console.log("[RealVoiceRecognizer] Recognition aborted (likely intentional stop)");
         return;
-      } else if (event.error === 'no-speech' || event.error === 'audio-capture' || event.error === 'network') {
+      } else if (event.error === 'no-speech') {
+        // No speech detected - this is normal, don't restart immediately
+        console.log("[RealVoiceRecognizer] No speech detected");
+        // Only restart if we've been silent for a while
+        if (this.active) {
+          setTimeout(() => {
+            if (this.active && this.recognition.state === 'inactive') {
+              this.scheduleRestart();
+            }
+          }, 2000); // Wait 2 seconds before restarting on no-speech
+        }
+      } else if (event.error === 'audio-capture' || event.error === 'network') {
         // These errors are recoverable, try to restart
+        console.log("[RealVoiceRecognizer] Recoverable error, attempting restart:", event.error);
         this.scheduleRestart();
       } else {
         // For other errors, log but don't restart to prevent loops
@@ -192,9 +232,15 @@ export class RealVoiceRecognizer {
     };
 
     this.recognition.onend = () => {
-      console.log("[RealVoiceRecognizer] Recognition ended");
+      console.log("[RealVoiceRecognizer] Recognition ended, active:", this.active);
       if (this.active) {
-        this.scheduleRestart();
+        // Only restart if we're still supposed to be active
+        // Add a small delay to prevent rapid restarts
+        setTimeout(() => {
+          if (this.active) {
+            this.scheduleRestart();
+          }
+        }, 1000);
       }
     };
 
@@ -232,5 +278,6 @@ export class RealVoiceRecognizer {
     this.interimTranscript = "";
     this.restartAttempts = 0;
     this.lastTranslationTime = 0;
+    this.lastTranslatedText = ""; // Reset translated text tracking
   }
 }

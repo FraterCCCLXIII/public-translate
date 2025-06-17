@@ -151,7 +151,14 @@ export function useAutoPlayOnSilence({
         const micButtonRecentlyClicked = timeSinceMicClick < 3000; // 3 seconds
         const translationAlreadyPlayed = translation === lastPlayedTranslationRef.current;
         
-        if (!isAudioPlaying && canAutoPlay && translation.trim() && !isAutoPlayingRef.current && isMountedRef.current && !micButtonRecentlyClicked && !translationAlreadyPlayed) {
+        // Filter out "Translating..." and other status messages
+        const validTranslation = translation && 
+          translation !== "Translating..." && 
+          translation !== "No translation yet." &&
+          !translation.startsWith("[Translation error:") &&
+          !translation.startsWith("[Translation failed") ? translation : "";
+        
+        if (!isAudioPlaying && canAutoPlay && validTranslation && validTranslation.trim() && !isAutoPlayingRef.current && isMountedRef.current && !micButtonRecentlyClicked && !translationAlreadyPlayed) {
           console.log("[useAutoPlayOnSilence] Starting auto-play");
           isAutoPlayingRef.current = true;
           lastPlayedTranslationRef.current = translation; // Mark as played
@@ -235,7 +242,14 @@ export function useAutoPlayOnSilence({
           const micButtonRecentlyClicked = timeSinceMicClick < 3000; // 3 seconds
           const translationAlreadyPlayed = translation === lastPlayedTranslationRef.current;
           
-          if (!isAudioPlaying && canAutoPlay && translation.trim() && !isAutoPlayingRef.current && isMountedRef.current && !micButtonRecentlyClicked && !translationAlreadyPlayed) {
+          // Filter out "Translating..." and other status messages
+          const validTranslation = translation && 
+            translation !== "Translating..." && 
+            translation !== "No translation yet." &&
+            !translation.startsWith("[Translation error:") &&
+            !translation.startsWith("[Translation failed") ? translation : "";
+          
+          if (!isAudioPlaying && canAutoPlay && validTranslation && validTranslation.trim() && !isAutoPlayingRef.current && isMountedRef.current && !micButtonRecentlyClicked && !translationAlreadyPlayed) {
             console.log("[useAutoPlayOnSilence] Starting auto-play (stable transcript)");
             isAutoPlayingRef.current = true;
             lastPlayedTranslationRef.current = translation; // Mark as played
@@ -313,7 +327,14 @@ export function useAutoPlayOnSilence({
           const micButtonRecentlyClicked = timeSinceMicClick < 3000; // 3 seconds
           const translationAlreadyPlayed = translation === lastPlayedTranslationRef.current;
           
-          if (!isAudioPlaying && canAutoPlay && translation.trim() && !isAutoPlayingRef.current && isMountedRef.current && !micButtonRecentlyClicked && !translationAlreadyPlayed) {
+          // Filter out "Translating..." and other status messages
+          const validTranslation = translation && 
+            translation !== "Translating..." && 
+            translation !== "No translation yet." &&
+            !translation.startsWith("[Translation error:") &&
+            !translation.startsWith("[Translation failed") ? translation : "";
+          
+          if (!isAudioPlaying && canAutoPlay && validTranslation && validTranslation.trim() && !isAutoPlayingRef.current && isMountedRef.current && !micButtonRecentlyClicked && !translationAlreadyPlayed) {
             console.log("[useAutoPlayOnSilence] Starting auto-play (remaining time)");
             isAutoPlayingRef.current = true;
             lastPlayedTranslationRef.current = translation; // Mark as played

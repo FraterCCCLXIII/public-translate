@@ -3,6 +3,7 @@ import TranscriptPanelControls from "./TranscriptPanelControls";
 import { Slider } from "./ui/slider";
 import { Eye } from "lucide-react";
 import PunctuateText from "./PunctuateText";
+import BouncingDots from './BouncingDots';
 
 const RTL_LANGS = new Set(["ar", "he", "fa", "ur"]);
 function isRTL(lang: string) {
@@ -17,6 +18,7 @@ function canReorderCharacters(lang: string) {
 interface TranscriptWord {
   text: string;
   timestamp?: string;
+  isTranslating?: boolean;
 }
 
 interface TranscriptPanelProps {
@@ -37,7 +39,7 @@ interface TranscriptPanelProps {
     onPlaybackEnd?: () => void;
     disabled?: boolean;
     selectedVoice?: string;
-    setSelectedVoice?: (voiceId: string) => void;
+    setSelectedVoice?: (voiceId: string, manual?: boolean) => void;
   };
   alignState?: {
     currentAlign: "left" | "right";
@@ -317,6 +319,16 @@ const TranscriptPanel: React.FC<TranscriptPanelProps> = ({
           </div>
         )}
         {/* Alignment & Audio Controls */}
+        {(() => {
+          console.log("[TranscriptPanel] Passing voice selection to controls:", {
+            title,
+            selectedVoice: audioButtonProps?.selectedVoice,
+            audioLang: audioButtonProps?.lang,
+            hasAudioText: !!audioButtonProps?.text,
+            audioTextLength: audioButtonProps?.text?.length || 0
+          });
+          return null;
+        })()}
         <TranscriptPanelControls
           align={currentAlign}
           onToggleAlign={handleAlignToggle}
@@ -328,7 +340,10 @@ const TranscriptPanel: React.FC<TranscriptPanelProps> = ({
           audioText={audioButtonProps?.text}
           audioLang={audioButtonProps?.lang}
           selectedVoice={audioButtonProps?.selectedVoice}
-          setSelectedVoice={audioButtonProps?.setSelectedVoice}
+          setSelectedVoice={(voiceId: string, manual?: boolean) => {
+            console.log("[TranscriptPanel] Voice selection changed:", { title, voiceId, manual, currentVoice: audioButtonProps?.selectedVoice });
+            audioButtonProps?.setSelectedVoice?.(voiceId, manual);
+          }}
           setPlaying={audioButtonProps?.setPlaying}
           onPlaybackStart={audioButtonProps?.onPlaybackStart}
           onPlaybackEnd={audioButtonProps?.onPlaybackEnd}
@@ -354,7 +369,9 @@ const TranscriptPanel: React.FC<TranscriptPanelProps> = ({
           }}
         >
           {/* CJK: Only change alignment, never reverse text */}
-          {canReorderCharacters(lang) ? (
+          {Array.isArray(text) && text[0]?.isTranslating ? (
+            <BouncingDots size="md" color="text-gray-400" />
+          ) : canReorderCharacters(lang) ? (
             <span
               dir="ltr"
               style={{

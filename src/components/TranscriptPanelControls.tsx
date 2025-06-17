@@ -26,7 +26,7 @@ interface TranscriptPanelControlsProps {
   audioText?: string;
   audioLang?: string;
   selectedVoice?: string;
-  setSelectedVoice?: (voiceId: string) => void;
+  setSelectedVoice?: (voiceId: string, manual?: boolean) => void;
   setPlaying?: (v: boolean) => void;
   onPlaybackStart?: () => void;
   onPlaybackEnd?: () => void;
@@ -49,6 +49,14 @@ const TranscriptPanelControls: React.FC<TranscriptPanelControlsProps> = ({
 }) => {
   // Determine which icon to show based on current alignment
   const AlIcon = align === "left" ? AlignLeft : AlignRight;
+
+  // Debug logging for voice selection
+  console.log("[TranscriptPanelControls] Voice selection props:", {
+    selectedVoice,
+    audioLang,
+    canAudioPlayback,
+    audioText: audioText?.substring(0, 30) + "..."
+  });
 
   // Let AudioPlaybackButton always be enabled for popover;
   // just disable the PLAYBACK logic if can't play audio,
@@ -73,7 +81,10 @@ const TranscriptPanelControls: React.FC<TranscriptPanelControlsProps> = ({
         // Always enable pointer events; set `disabled` for PLAYBACK only
         disabled={!canAudioPlayback}
         selectedVoice={selectedVoice}
-        setSelectedVoice={setSelectedVoice}
+        setSelectedVoice={(voiceId: string, manual?: boolean) => {
+          console.log("[TranscriptPanelControls] setSelectedVoice called:", { voiceId, manual, currentSelectedVoice: selectedVoice });
+          setSelectedVoice?.(voiceId, manual);
+        }}
       />
     </div>
   );

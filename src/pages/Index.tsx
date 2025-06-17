@@ -6,6 +6,7 @@ import { useVoiceRecognition } from "@/hooks/useVoiceRecognition";
 import { useTranslation } from "@/hooks/useTranslation";
 import { useAutoPlayOnSilence } from "@/hooks/useAutoPlayOnSilence";
 import { saveAs } from 'file-saver';
+import BouncingDots from "@/components/BouncingDots";
 
 // Language metadata
 const LANGUAGES = [
@@ -292,17 +293,73 @@ const Index = () => {
   const [rightAudioPlaying, setRightAudioPlaying] = useState(false);
 
   // Voice selection state for both panels
-  const [leftSelectedVoice, _setLeftSelectedVoice] = useState<string>(() => localStorage.getItem("leftSelectedVoice") || "");
-  const [rightSelectedVoice, _setRightSelectedVoice] = useState<string>(() => localStorage.getItem("rightSelectedVoice") || "");
+  const [leftSelectedVoice, _setLeftSelectedVoice] = useState<string>(() => {
+    const stored = localStorage.getItem("leftSelectedVoice") || "";
+    // Validate stored value against available voices
+    if (typeof window !== 'undefined' && window.speechSynthesis && window.speechSynthesis.getVoices) {
+      const voices = window.speechSynthesis.getVoices();
+      if (stored && !voices.find(v => v.voiceURI === stored)) {
+        console.log("[Index] Invalid leftSelectedVoice in localStorage, clearing:", stored);
+        localStorage.removeItem("leftSelectedVoice");
+        return "";
+      }
+    }
+    console.log("[Index] Retrieved leftSelectedVoice from localStorage:", stored);
+    return stored;
+  });
+  const [rightSelectedVoice, _setRightSelectedVoice] = useState<string>(() => {
+    const stored = localStorage.getItem("rightSelectedVoice") || "";
+    // Validate stored value against available voices
+    if (typeof window !== 'undefined' && window.speechSynthesis && window.speechSynthesis.getVoices) {
+      const voices = window.speechSynthesis.getVoices();
+      if (stored && !voices.find(v => v.voiceURI === stored)) {
+        console.log("[Index] Invalid rightSelectedVoice in localStorage, clearing:", stored);
+        localStorage.removeItem("rightSelectedVoice");
+        return "";
+      }
+    }
+    console.log("[Index] Retrieved rightSelectedVoice from localStorage:", stored);
+    return stored;
+  });
   const [leftVoiceManuallySelected, setLeftVoiceManuallySelected] = useState(false);
   const [rightVoiceManuallySelected, setRightVoiceManuallySelected] = useState(false);
 
+  // Re-validate voice selections after voices are loaded
+  useEffect(() => {
+    const validateVoices = () => {
+      if (window.speechSynthesis && window.speechSynthesis.getVoices) {
+        const voices = window.speechSynthesis.getVoices();
+        // Left
+        const leftStored = localStorage.getItem("leftSelectedVoice") || "";
+        if (leftStored && !voices.find(v => v.voiceURI === leftStored)) {
+          console.log("[Index] (voiceschanged) Invalid leftSelectedVoice in localStorage, clearing:", leftStored);
+          localStorage.removeItem("leftSelectedVoice");
+          _setLeftSelectedVoice("");
+        }
+        // Right
+        const rightStored = localStorage.getItem("rightSelectedVoice") || "";
+        if (rightStored && !voices.find(v => v.voiceURI === rightStored)) {
+          console.log("[Index] (voiceschanged) Invalid rightSelectedVoice in localStorage, clearing:", rightStored);
+          localStorage.removeItem("rightSelectedVoice");
+          _setRightSelectedVoice("");
+        }
+      }
+    };
+    validateVoices();
+    window.speechSynthesis.addEventListener('voiceschanged', validateVoices);
+    return () => {
+      window.speechSynthesis.removeEventListener('voiceschanged', validateVoices);
+    };
+  }, []);
+
   // Wrap setters to track manual selection
   const setLeftSelectedVoice = (voice: string, manual = false) => {
+    console.log("[Index] setLeftSelectedVoice called:", { voice, manual, previousVoice: leftSelectedVoice });
     _setLeftSelectedVoice(voice);
     if (manual) setLeftVoiceManuallySelected(true);
   };
   const setRightSelectedVoice = (voice: string, manual = false) => {
+    console.log("[Index] setRightSelectedVoice called:", { voice, manual, previousVoice: rightSelectedVoice });
     _setRightSelectedVoice(voice);
     if (manual) setRightVoiceManuallySelected(true);
   };
@@ -345,10 +402,20 @@ const Index = () => {
 
   // Save voice selections to localStorage
   useEffect(() => {
+    console.log("[Index] Saving leftSelectedVoice to localStorage:", {
+      leftSelectedVoice,
+      type: typeof leftSelectedVoice,
+      length: leftSelectedVoice?.length
+    });
     localStorage.setItem("leftSelectedVoice", leftSelectedVoice);
   }, [leftSelectedVoice]);
 
   useEffect(() => {
+    console.log("[Index] Saving rightSelectedVoice to localStorage:", {
+      rightSelectedVoice,
+      type: typeof rightSelectedVoice,
+      length: rightSelectedVoice?.length
+    });
     localStorage.setItem("rightSelectedVoice", rightSelectedVoice);
   }, [rightSelectedVoice]);
 
@@ -597,15 +664,66 @@ const Index = () => {
 
   // Convert transcript and translation to the format expected by TranscriptPanel
   const transcriptData = result.transcript ? [{ text: result.transcript, timestamp: "" }] : [];
-  const translationData = result.translation ? [{ text: result.translation, timestamp: "" }] : [];
+  const translationData = result.translation ? 
+    (result.translation === "Translating..." ? 
+      [{ text: "", timestamp: "", isTranslating: true }] : 
+      [{ text: result.translation, timestamp: "" }]
+    ) : [];
 
   const [transcriptHistory, setTranscriptHistory] = useState<string[]>([]);
   const [translationHistory, setTranslationHistory] = useState<string[]>([]);
+  const lastTranscriptRef = useRef<string>("");
+  const lastTranslationRef = useRef<string>("");
 
-  // When you get a new transcript/translation (replace where result.transcript/result.translation is set):
+  // Only add final, complete transcripts to history (not partial/interim results)
   useEffect(() => {
-    if (result.transcript) setTranscriptHistory(prev => [...prev, result.transcript]);
-    if (result.translation) setTranslationHistory(prev => [...prev, result.translation]);
+    console.log("[Index] Transcript received:", result.transcript);
+    console.log("[Index] Translation received:", result.translation);
+    
+    // Only add to history if this is a new, final transcript (not just a partial update)
+    if (result.transcript && result.transcript !== lastTranscriptRef.current) {
+      console.log("[Index] New transcript detected:", result.transcript);
+      console.log("[Index] Last transcript was:", lastTranscriptRef.current);
+      
+      // Check if this is a final transcript (not interim)
+      // Use better criteria: look for sentence endings and significant content
+      const hasSentenceEnding = /[.!?]/.test(result.transcript);
+      const isSignificantlyLonger = result.transcript.length > lastTranscriptRef.current.length + 5;
+      const isCompleteSentence = result.transcript.length >= 10 && (hasSentenceEnding || isSignificantlyLonger);
+      
+      console.log("[Index] Is final transcript?", isCompleteSentence);
+      console.log("[Index] Has sentence ending?", hasSentenceEnding);
+      console.log("[Index] Is significantly longer?", isSignificantlyLonger);
+      console.log("[Index] Current length:", result.transcript.length);
+      console.log("[Index] Previous length:", lastTranscriptRef.current.length);
+      console.log("[Index] Difference:", result.transcript.length - lastTranscriptRef.current.length);
+      
+      if (isCompleteSentence) {
+        console.log("[Index] Adding final transcript to history:", result.transcript);
+        setTranscriptHistory(prev => [...prev, result.transcript]);
+        lastTranscriptRef.current = result.transcript;
+      } else {
+        console.log("[Index] Not adding to history - likely interim transcript");
+      }
+    }
+    
+    // Handle translations separately - add them when they arrive (not just when transcripts are added)
+    if (result.translation && result.translation !== lastTranslationRef.current) {
+      console.log("[Index] New translation detected:", result.translation);
+      console.log("[Index] Last translation was:", lastTranslationRef.current);
+      
+      // Only add valid translations (not status messages)
+      if (result.translation !== "No translation yet." && 
+          result.translation !== "Translating..." &&
+          !result.translation.startsWith("[Translation error:") &&
+          !result.translation.startsWith("[Translation failed")) {
+        console.log("[Index] Adding translation to history:", result.translation);
+        setTranslationHistory(prev => [...prev, result.translation]);
+        lastTranslationRef.current = result.translation;
+      } else {
+        console.log("[Index] Not adding translation to history - status message:", result.translation);
+      }
+    }
   }, [result.transcript, result.translation]);
 
   // For download, collate input/translation pairs:
@@ -617,6 +735,17 @@ const Index = () => {
     }
     const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
     saveAs(blob, 'transcript.txt');
+  };
+
+  // Debug logging for language changes
+  const debugSetLeftLang = (lang: string) => {
+    console.log("[Index] setLeftLang called:", { from: leftLang, to: lang, recording });
+    setLeftLang(lang);
+  };
+
+  const debugSetRightLang = (lang: string) => {
+    console.log("[Index] setRightLang called:", { from: rightLang, to: lang, recording });
+    setRightLang(lang);
   };
 
   return (
@@ -637,8 +766,8 @@ const Index = () => {
           setTextSize={() => {}} // unused, legacy prop
           leftLang={leftLang}
           rightLang={rightLang}
-          setLeftLang={setLeftLang}
-          setRightLang={setRightLang}
+          setLeftLang={debugSetLeftLang}
+          setRightLang={debugSetRightLang}
           leftVisible={leftVisible}
           rightVisible={rightVisible}
           setLeftVisible={setLeftVisible}
@@ -790,7 +919,7 @@ const Index = () => {
                   setReverseOrder: setRightReverseOrder,
                 }}
                 audioButtonProps={{
-                  text: result.translation,
+                  text: result.translation && result.translation !== "Translating..." ? result.translation : "",
                   playing: rightAudioPlaying || activeAudioSessions > 0,
                   setPlaying: setRightAudioPlaying,
                   lang: rightLang,

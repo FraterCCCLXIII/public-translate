@@ -37,13 +37,16 @@ const AudioPlaybackButton: React.FC<AudioPlaybackButtonProps> = ({
   const synthRef = useRef(window.speechSynthesis);
   // Timer to allow delayed closing on mouse leave
   const closeTimerRef = useRef<NodeJS.Timeout | null>(null);
+  // Track if user has manually selected a voice to prevent auto-override
+  const manuallySelectedRef = useRef(false);
 
   // Load available voices
   useEffect(() => {
     const loadVoices = () => {
       if (window.speechSynthesis && window.speechSynthesis.getVoices) {
         const voices = window.speechSynthesis.getVoices();
-        console.log("Available voices:", voices);
+        console.log("[AudioPlaybackButton] Available voices loaded:", voices.length, "voices");
+        console.log("[AudioPlaybackButton] Current selectedVoice prop:", selectedVoice);
         setAvailableVoices(voices);
         
         // Enhanced voice selection logic
@@ -100,9 +103,22 @@ const AudioPlaybackButton: React.FC<AudioPlaybackButtonProps> = ({
           }
           
           // Only update if we found a better voice or no voice is currently selected
-          if (!selectedVoice || bestVoice.voiceURI !== selectedVoice) {
+          // AND the user hasn't manually selected a voice
+          if ((!selectedVoice || bestVoice.voiceURI !== selectedVoice) && !manuallySelectedRef.current) {
             console.log(`[AudioPlaybackButton] Auto-selecting voice for ${lang}:`, bestVoice.name, bestVoice.voiceURI);
+            console.log(`[AudioPlaybackButton] Auto-selection reason:`, {
+              noSelectedVoice: !selectedVoice,
+              differentVoice: selectedVoice ? bestVoice.voiceURI !== selectedVoice : false,
+              manuallySelected: manuallySelectedRef.current
+            });
             setSelectedVoice && setSelectedVoice(bestVoice.voiceURI);
+          } else if (manuallySelectedRef.current) {
+            console.log(`[AudioPlaybackButton] Respecting manual voice selection:`, selectedVoice);
+            console.log(`[AudioPlaybackButton] Manual selection details:`, {
+              selectedVoice,
+              bestVoice: bestVoice?.voiceURI,
+              manuallySelected: manuallySelectedRef.current
+            });
           } else {
             console.log(`[AudioPlaybackButton] Voice already selected for ${lang}:`, bestVoice.name);
           }
@@ -122,7 +138,21 @@ const AudioPlaybackButton: React.FC<AudioPlaybackButtonProps> = ({
         window.speechSynthesis.removeEventListener('voiceschanged', loadVoices);
       };
     }
-  }, [lang, selectedVoice, setSelectedVoice]);
+  }, [lang, setSelectedVoice]);
+
+  // Add effect to log when selectedVoice prop changes
+  useEffect(() => {
+    console.log("[AudioPlaybackButton] selectedVoice prop changed:", {
+      selectedVoice,
+      lang,
+      availableVoicesCount: availableVoices.length
+    });
+  }, [selectedVoice, lang, availableVoices.length]);
+
+  // Reset manual selection flag when language changes
+  useEffect(() => {
+    manuallySelectedRef.current = false;
+  }, [lang]);
 
   // Helper function to get language family
   const getLanguageFamily = (langCode: string): string => {
@@ -281,14 +311,21 @@ const AudioPlaybackButton: React.FC<AudioPlaybackButtonProps> = ({
     if (selectedVoice) {
       const selectedVoiceObj = availableVoices.find(voice => voice.voiceURI === selectedVoice);
       if (selectedVoiceObj) {
-        console.log("Using voice:", selectedVoiceObj.name, selectedVoiceObj.voiceURI);
+        console.log("[AudioPlaybackButton] Using selected voice for playback:", selectedVoiceObj.name, selectedVoiceObj.voiceURI);
+        console.log("[AudioPlaybackButton] Voice details:", {
+          name: selectedVoiceObj.name,
+          voiceURI: selectedVoiceObj.voiceURI,
+          lang: selectedVoiceObj.lang,
+          default: selectedVoiceObj.default
+        });
         utter.voice = selectedVoiceObj;
       } else {
-        console.log("Selected voice not found:", selectedVoice);
-        console.log("Available voices:", availableVoices.map(v => `${v.name} (${v.voiceURI})`));
+        console.log("[AudioPlaybackButton] Selected voice not found:", selectedVoice);
+        console.log("[AudioPlaybackButton] Available voices:", availableVoices.map(v => `${v.name} (${v.voiceURI})`));
+        console.log("[AudioPlaybackButton] Looking for voice URI:", selectedVoice);
       }
     } else {
-      console.log("No voice selected, using default voice for language:", lang);
+      console.log("[AudioPlaybackButton] No voice selected, using default voice for language:", lang);
     }
     
     console.log("Speech synthesis utterance config:", {
@@ -331,6 +368,7 @@ const AudioPlaybackButton: React.FC<AudioPlaybackButtonProps> = ({
 
   // Handlers for hover popover trigger
   const handleIconMouseEnter = () => {
+    console.log("[AudioPlaybackButton] Icon mouse enter - disabled:", disabled, "playing:", playing, "text:", text?.substring(0, 30) + "...");
     if (closeTimerRef.current) {
       clearTimeout(closeTimerRef.current);
       closeTimerRef.current = null;
@@ -359,7 +397,10 @@ const AudioPlaybackButton: React.FC<AudioPlaybackButtonProps> = ({
       <PopoverTrigger asChild>
         <button
           type="button"
-          onClick={handleAudioClick}
+          onClick={(e) => {
+            console.log("[AudioPlaybackButton] Button clicked - disabled:", disabled, "playing:", playing, "text:", text?.substring(0, 30) + "...");
+            handleAudioClick(e);
+          }}
           className="p-1 rounded hover:bg-accent focus:outline-none transition"
           disabled={disabled}
           aria-label={playing ? "Stop audio playback" : "Play transcript with text-to-speech"}
@@ -395,7 +436,17 @@ const AudioPlaybackButton: React.FC<AudioPlaybackButtonProps> = ({
             availableVoices.map((voice) => (
               <Button
                 key={voice.voiceURI}
-                onClick={() => setSelectedVoice && setSelectedVoice(voice.voiceURI, true)}
+                onClick={() => {
+                  console.log("[AudioPlaybackButton] User manually selected voice:", {
+                    name: voice.name,
+                    voiceURI: voice.voiceURI,
+                    lang: voice.lang,
+                    fullVoice: voice
+                  });
+                  manuallySelectedRef.current = true; // Mark as manual selection
+                  console.log("[AudioPlaybackButton] Calling setSelectedVoice with:", voice.voiceURI);
+                  setSelectedVoice && setSelectedVoice(voice.voiceURI, true);
+                }}
                 variant={selectedVoice === voice.voiceURI ? "default" : "outline"}
                 className={`w-full text-left px-2 py-1 rounded ${
                   selectedVoice === voice.voiceURI 

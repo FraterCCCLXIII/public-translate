@@ -471,9 +471,14 @@ const TranscriptNavInner: React.FC<TranscriptNavProps> = ({
       lang.value.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
+    const handleValueChange = (newValue: string) => {
+      console.log("[LanguageSelector] Language selection changed:", { from: value, to: newValue, placeholder });
+      onValueChange(newValue);
+    };
+
     return (
       <div className={`relative ${className}`}>
-        <Select value={value} onValueChange={onValueChange} open={isOpen} onOpenChange={setIsOpen}>
+        <Select value={value} onValueChange={handleValueChange} open={isOpen} onOpenChange={setIsOpen}>
           <SelectTrigger className="w-28" aria-label={placeholder}>
             <SelectValue aria-label={placeholder}>
               {LANGUAGES.find(l => l.value === value)?.label || value}

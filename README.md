@@ -17,6 +17,10 @@
 - Full transcript view and download (collated input/translation pairs).
 - Settings for translation provider, TTS, and more.
 
+## Known Bugs
+
+- **Transcript Log Issues**: The transcript history functionality currently has issues with partial transcript duplication and missing translations. The system is being actively improved to better handle interim vs final speech recognition results and translation timing.
+
 ## Project Structure
 
 ```

@@ -1,4 +1,4 @@
-import { useRef, useState, useCallback } from "react";
+import { useRef, useState, useCallback, useEffect } from "react";
 import { DemoRecognizer } from "@/lib/voice/DemoRecognizer";
 import { RealVoiceRecognizer } from "@/lib/voice/RealVoiceRecognizer";
 import { useTranslation } from "@/hooks/useTranslation";
@@ -18,6 +18,17 @@ export function useVoiceRecognition() {
   const [leftLang, setLeftLang] = useState("en");
   const [rightLang, setRightLang] = useState("ja");
   const { translate } = useTranslation();
+
+  // Debug logging for language changes
+  const debugSetLeftLang = (lang: string) => {
+    console.log("[useVoiceRecognition] setLeftLang called:", { from: leftLang, to: lang, recording });
+    setLeftLang(lang);
+  };
+
+  const debugSetRightLang = (lang: string) => {
+    console.log("[useVoiceRecognition] setRightLang called:", { from: rightLang, to: lang, recording });
+    setRightLang(lang);
+  };
 
   const retranslate = useCallback(
     async (
@@ -107,6 +118,18 @@ export function useVoiceRecognition() {
     });
   };
 
+  // Restart voice recognition when languages change
+  useEffect(() => {
+    if (recording && recognizerRef.current) {
+      console.log("[useVoiceRecognition] Languages changed, restarting recognition:", { leftLang, rightLang });
+      stop();
+      // Add a small delay to ensure the stop is processed
+      setTimeout(() => {
+        start();
+      }, 100);
+    }
+  }, [leftLang, rightLang]);
+
   // Debug - log state updates for recording & result
   // Could be verbose in rapid update scenarios, but useful for tracing
   // Only runs in development
@@ -137,8 +160,8 @@ export function useVoiceRecognition() {
     clearTranscript,
     leftLang,
     rightLang,
-    setLeftLang,
-    setRightLang,
+    setLeftLang: debugSetLeftLang,
+    setRightLang: debugSetRightLang,
     retranslate,
   };
 }
