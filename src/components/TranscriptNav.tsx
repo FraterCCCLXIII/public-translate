@@ -55,6 +55,14 @@ const LLM_MODELS = [
   { value: "localllm", label: "Local LLM" },
   { value: "googletranslate", label: "Google Translate (free)" },
 ];
+
+const TRANSLATION_PROVIDERS = [
+  { value: "openai", label: "OpenAI (Best Quality)" },
+  { value: "mymemory", label: "MyMemory (Free, Reliable)" },
+  { value: "libretranslate", label: "LibreTranslate (Open Source)" },
+  { value: "auto", label: "Auto (Try All)" },
+];
+
 const TTS_PROVIDERS = [
   { value: "", label: "None" },
   { value: "elevenlabs", label: "ElevenLabs" },
@@ -178,6 +186,7 @@ const TranscriptNavInner: React.FC<TranscriptNavProps> = ({
 
   // Settings modal (popover)
   const [llmProvider, setLlmProvider] = useState<string>(() => localStorage.getItem("llm_provider") || "openai");
+  const [translationProvider, setTranslationProvider] = useState<string>(() => localStorage.getItem("translation_provider") || "auto");
   const [openaiKey, setOpenaiKey] = useState<string>(() => localStorage.getItem("openai_api_key") || "");
   const [claudeKey, setClaudeKey] = useState<string>(() => localStorage.getItem("claude_api_key") || "");
   const [deepseekKey, setDeepseekKey] = useState<string>(() => localStorage.getItem("deepseek_api_key") || "");
@@ -197,6 +206,7 @@ const TranscriptNavInner: React.FC<TranscriptNavProps> = ({
   const saveSettings = () => {
     localStorage.setItem("openai_api_key", openaiKey);
     localStorage.setItem("llm_provider", llmProvider);
+    localStorage.setItem("translation_provider", translationProvider);
     localStorage.setItem("claude_api_key", claudeKey);
     localStorage.setItem("deepseek_api_key", deepseekKey);
     localStorage.setItem("local_llm_url", localLlmUrl);
@@ -508,6 +518,25 @@ const TranscriptNavInner: React.FC<TranscriptNavProps> = ({
                   />
                 </div>
               )}
+              {/* Translation Provider dropdown */}
+              <div>
+                <label className="font-bold text-xs text-gray-700">Translation Provider</label>
+                <select
+                  value={translationProvider}
+                  className="w-full mt-1 border rounded px-2 py-1 bg-background"
+                  onChange={e => setTranslationProvider(e.target.value)}
+                >
+                  {TRANSLATION_PROVIDERS.map(o => (
+                    <option key={o.value} value={o.value}>{o.label}</option>
+                  ))}
+                </select>
+                <div className="text-xs text-gray-500 mt-1">
+                  {translationProvider === "auto" && "Will try OpenAI first, then MyMemory, then LibreTranslate"}
+                  {translationProvider === "mymemory" && "Free translation service, no API key required"}
+                  {translationProvider === "libretranslate" && "Open source translation service"}
+                  {translationProvider === "openai" && "Requires OpenAI API key for best quality"}
+                </div>
+              </div>
               {/* TTS Provider and voice dropdown */}
               <div>
                 <label className="font-bold text-xs text-gray-700">{t("tts_provider")}</label>
