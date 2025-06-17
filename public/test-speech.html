@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web Speech API Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            margin: 10px;
+            cursor: pointer;
+        }
+        .recording {
+            background-color: #ff4444;
+            color: white;
+        }
+        #status {
+            margin: 20px 0;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+        .info { background-color: #d1ecf1; color: #0c5460; }
+    </style>
+</head>
+<body>
+    <h1>Web Speech API Test</h1>
+    
+    <div id="status" class="info">Checking Web Speech API availability...</div>
+    
+    <button id="startBtn" onclick="startRecording()">Start Recording</button>
+    <button id="stopBtn" onclick="stopRecording()" disabled>Stop Recording</button>
+    
+    <h3>Transcript:</h3>
+    <div id="transcript" style="min-height: 100px; border: 1px solid #ccc; padding: 10px; margin: 10px 0;"></div>
+    
+    <h3>Console Log:</h3>
+    <div id="console" style="background-color: #f8f9fa; padding: 10px; height: 200px; overflow-y: auto; font-family: monospace; font-size: 12px;"></div>
+
+    <script>
+        let recognition = null;
+        let isRecording = false;
+        
+        function log(message) {
+            console.log(message);
+            const consoleDiv = document.getElementById('console');
+            consoleDiv.innerHTML += new Date().toLocaleTimeString() + ': ' + message + '<br>';
+            consoleDiv.scrollTop = consoleDiv.scrollHeight;
+        }
+        
+        function updateStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('status');
+            statusDiv.textContent = message;
+            statusDiv.className = type;
+        }
+        
+        // Check Web Speech API availability
+        function checkSpeechAPI() {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            
+            if (SpeechRecognition) {
+                log('Web Speech API is available');
+                updateStatus('Web Speech API is available', 'success');
+                return true;
+            } else {
+                log('Web Speech API is NOT available');
+                updateStatus('Web Speech API is NOT available - this browser does not support speech recognition', 'error');
+                return false;
+            }
+        }
+        
+        // Check microphone permissions
+        async function checkMicrophone() {
+            try {
+                log('Requesting microphone permission...');
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                log('Microphone permission granted');
+                updateStatus('Microphone permission granted', 'success');
+                stream.getTracks().forEach(track => track.stop());
+                return true;
+            } catch (error) {
+                log('Microphone permission denied: ' + error.message);
+                updateStatus('Microphone permission denied: ' + error.message, 'error');
+                return false;
+            }
+        }
+        
+        async function startRecording() {
+            if (!checkSpeechAPI()) {
+                alert('Web Speech API not available');
+                return;
+            }
+            
+            if (!(await checkMicrophone())) {
+                alert('Microphone permission required');
+                return;
+            }
+            
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            recognition = new SpeechRecognition();
+            
+            recognition.continuous = true;
+            recognition.interimResults = true;
+            recognition.lang = 'en-US';
+            
+            recognition.onstart = () => {
+                log('Recognition started');
+                isRecording = true;
+                document.getElementById('startBtn').disabled = true;
+                document.getElementById('stopBtn').disabled = false;
+                document.getElementById('startBtn').classList.add('recording');
+                updateStatus('Recording...', 'info');
+            };
+            
+            recognition.onresult = (event) => {
+                let finalTranscript = '';
+                let interimTranscript = '';
+                
+                for (let i = event.resultIndex; i < event.results.length; ++i) {
+                    const transcript = event.results[i][0].transcript;
+                    if (event.results[i].isFinal) {
+                        finalTranscript += transcript;
+                    } else {
+                        interimTranscript += transcript;
+                    }
+                }
+                
+                const transcriptDiv = document.getElementById('transcript');
+                transcriptDiv.innerHTML = finalTranscript + '<i style="color: #666;">' + interimTranscript + '</i>';
+                
+                if (finalTranscript) {
+                    log('Final transcript: ' + finalTranscript);
+                }
+                if (interimTranscript) {
+                    log('Interim transcript: ' + interimTranscript);
+                }
+            };
+            
+            recognition.onerror = (event) => {
+                log('Recognition error: ' + event.error);
+                updateStatus('Recognition error: ' + event.error, 'error');
+            };
+            
+            recognition.onend = () => {
+                log('Recognition ended');
+                isRecording = false;
+                document.getElementById('startBtn').disabled = false;
+                document.getElementById('stopBtn').disabled = true;
+                document.getElementById('startBtn').classList.remove('recording');
+                updateStatus('Recognition ended', 'info');
+            };
+            
+            try {
+                recognition.start();
+                log('Starting recognition...');
+            } catch (error) {
+                log('Error starting recognition: ' + error.message);
+                updateStatus('Error starting recognition: ' + error.message, 'error');
+            }
+        }
+        
+        function stopRecording() {
+            if (recognition && isRecording) {
+                recognition.stop();
+                log('Stopping recognition...');
+            }
+        }
+        
+        // Initialize
+        checkSpeechAPI();
+    </script>
+</body>
+</html> 

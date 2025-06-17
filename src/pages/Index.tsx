@@ -3,6 +3,7 @@ import TranscriptNav from "@/components/TranscriptNav";
 import NUX from "@/components/NUX";
 import TranscriptPanel from "@/components/TranscriptPanel";
 import { useVoiceRecognition } from "@/hooks/useVoiceRecognition";
+import { useTranslation } from "@/hooks/useTranslation";
 
 // Language metadata
 const LANGUAGES = [
@@ -27,6 +28,9 @@ const Index = () => {
     setRightLang,
   } = useVoiceRecognition();
 
+  // Translation hook for testing
+  const { translate } = useTranslation();
+
   // Determine if user has completed NUX
   const [showNUX, setShowNUX] = useState(() => {
     return localStorage.getItem("nux_complete") !== "1";
@@ -40,6 +44,14 @@ const Index = () => {
   const [leftVisible, setLeftVisible] = useState(true);
   const [rightVisible, setRightVisible] = useState(true);
 
+  // Audio playback state for both panels
+  const [leftAudioPlaying, setLeftAudioPlaying] = useState(false);
+  const [rightAudioPlaying, setRightAudioPlaying] = useState(false);
+
+  // Voice selection state for both panels
+  const [leftSelectedVoice, setLeftSelectedVoice] = useState<string>("");
+  const [rightSelectedVoice, setRightSelectedVoice] = useState<string>("");
+
   // Debug: Check Web Speech API availability
   useEffect(() => {
     const SpeechRecognitionCtor = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
@@ -51,6 +63,30 @@ const Index = () => {
       console.warn("Web Speech API not available - will use demo mode");
     }
   }, []);
+
+  // Debug: Log voice recognition results
+  useEffect(() => {
+    if (result.transcript || result.translation) {
+      console.log("Voice recognition result updated:", result);
+    }
+  }, [result]);
+
+  // Test translation function
+  const testTranslation = async () => {
+    try {
+      console.log("Testing translation...");
+      const testResult = await translate({
+        text: "Hello world",
+        from: "en",
+        to: "ja"
+      });
+      console.log("Translation test result:", testResult);
+      alert(`Translation test: "Hello world" -> "${testResult}"`);
+    } catch (error) {
+      console.error("Translation test failed:", error);
+      alert("Translation test failed: " + error);
+    }
+  };
 
   // When NUX finishes, mark complete and hide
   const handleNUXFinish = () => {
@@ -110,6 +146,27 @@ const Index = () => {
           transcript={result.transcript}
           translation={result.translation}
         />
+        
+        {/* Debug controls - only show in development */}
+        {process.env.NODE_ENV === "development" && (
+          <div className="fixed top-4 right-4 z-50 bg-white dark:bg-gray-800 p-4 rounded-lg shadow-lg border">
+            <h3 className="text-sm font-bold mb-2">Debug Controls</h3>
+            <button
+              onClick={testTranslation}
+              className="block w-full mb-2 px-3 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600"
+            >
+              Test Translation
+            </button>
+            <div className="text-xs text-gray-600">
+              <div>Recording: {recording ? "Yes" : "No"}</div>
+              <div>Left Lang: {leftLang}</div>
+              <div>Right Lang: {rightLang}</div>
+              <div>Left Voice: {leftSelectedVoice || "Default"}</div>
+              <div>Right Voice: {rightSelectedVoice || "Default"}</div>
+            </div>
+          </div>
+        )}
+        
         {/* Render transcript panels as main content */}
         <div className="flex flex-row gap-4 w-full max-w-6xl mx-auto mt-6">
           {leftVisible && (
@@ -127,6 +184,17 @@ const Index = () => {
                 isRecording={recording}
                 visible={leftVisible}
                 setVisible={setLeftVisible}
+                audioButtonProps={{
+                  text: result.transcript,
+                  playing: leftAudioPlaying,
+                  setPlaying: setLeftAudioPlaying,
+                  lang: leftLang,
+                  onPlaybackStart: () => console.log("Left panel audio started"),
+                  onPlaybackEnd: () => console.log("Left panel audio ended"),
+                  disabled: false, // Allow popover even without text
+                  selectedVoice: leftSelectedVoice,
+                  setSelectedVoice: setLeftSelectedVoice,
+                }}
               />
             </div>
           )}
@@ -145,6 +213,17 @@ const Index = () => {
                 isRecording={recording}
                 visible={rightVisible}
                 setVisible={setRightVisible}
+                audioButtonProps={{
+                  text: result.translation,
+                  playing: rightAudioPlaying,
+                  setPlaying: setRightAudioPlaying,
+                  lang: rightLang,
+                  onPlaybackStart: () => console.log("Right panel audio started"),
+                  onPlaybackEnd: () => console.log("Right panel audio ended"),
+                  disabled: false, // Allow popover even without text
+                  selectedVoice: rightSelectedVoice,
+                  setSelectedVoice: setRightSelectedVoice,
+                }}
               />
             </div>
           )}

@@ -154,6 +154,19 @@ const TranscriptPanel: React.FC<TranscriptPanelProps> = ({
     if ("speechSynthesis" in window) {
       const utter = new window.SpeechSynthesisUtterance(audioButtonProps.text);
       utter.lang = audioButtonProps.lang;
+      
+      // Set the selected voice if available
+      if (audioButtonProps.selectedVoice && window.speechSynthesis.getVoices) {
+        const voices = window.speechSynthesis.getVoices();
+        const selectedVoiceObj = voices.find(voice => voice.voiceURI === audioButtonProps.selectedVoice);
+        if (selectedVoiceObj) {
+          console.log("Using voice in TranscriptPanel:", selectedVoiceObj.name, selectedVoiceObj.voiceURI);
+          utter.voice = selectedVoiceObj;
+        } else {
+          console.log("Selected voice not found in TranscriptPanel:", audioButtonProps.selectedVoice);
+        }
+      }
+      
       utter.onend = () => {
         setAudioLoading(false);
         audioButtonProps.setPlaying(false);
