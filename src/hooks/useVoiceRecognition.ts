@@ -40,7 +40,7 @@ export function useVoiceRecognition() {
     [leftLang, rightLang, translate]
   );
 
-  const start = async () => {
+  const start = async (forceStart = false) => {
     console.log("[useVoiceRecognition] start called. Attempting to start recognition...", {
       leftLang,
       rightLang,
@@ -99,6 +99,14 @@ export function useVoiceRecognition() {
     }
   };
 
+  const clearTranscript = () => {
+    console.log("[useVoiceRecognition] clearTranscript called");
+    setResult({
+      transcript: "",
+      translation: "",
+    });
+  };
+
   // Debug - log state updates for recording & result
   // Could be verbose in rapid update scenarios, but useful for tracing
   // Only runs in development
@@ -126,6 +134,7 @@ export function useVoiceRecognition() {
     result,
     start,
     stop,
+    clearTranscript,
     leftLang,
     rightLang,
     setLeftLang,

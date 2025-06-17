@@ -152,6 +152,9 @@ const TranscriptPanel: React.FC<TranscriptPanelProps> = ({
     audioButtonProps.setPlaying(true);
     audioButtonProps.onPlaybackStart?.();
     if ("speechSynthesis" in window) {
+      // Cancel any existing speech synthesis to prevent overlap
+      window.speechSynthesis.cancel();
+      
       const utter = new window.SpeechSynthesisUtterance(audioButtonProps.text);
       utter.lang = audioButtonProps.lang;
       
@@ -177,7 +180,6 @@ const TranscriptPanel: React.FC<TranscriptPanelProps> = ({
         audioButtonProps.setPlaying(false);
         audioButtonProps.onPlaybackEnd?.();
       };
-      window.speechSynthesis.cancel();
       window.speechSynthesis.speak(utter);
     } else {
       setAudioLoading(false);

@@ -68,19 +68,39 @@ const AudioPlaybackButton: React.FC<AudioPlaybackButtonProps> = ({
 
   // Start speech on click
   const handleAudioClick = (e: React.MouseEvent) => {
+    console.log("[AudioPlaybackButton] Audio button clicked", {
+      playing,
+      text: text?.substring(0, 50) + "...",
+      target: e.target,
+      currentTarget: e.currentTarget,
+      eventPhase: e.eventPhase
+    });
+    
     e.stopPropagation();
     if (playing) {
+      console.log("[AudioPlaybackButton] Stopping audio playback");
       synthRef.current.cancel();
       setPlaying(false);
       setLoading(false);
       onPlaybackEnd?.();
       return;
     }
-    if (!text) return;
-    if (!window.speechSynthesis) return;
+    if (!text) {
+      console.log("[AudioPlaybackButton] No text to play");
+      return;
+    }
+    if (!window.speechSynthesis) {
+      console.log("[AudioPlaybackButton] Speech synthesis not available");
+      return;
+    }
+    
+    console.log("[AudioPlaybackButton] Starting audio playback");
     setLoading(true);
     setPlaying(true);
     onPlaybackStart?.();
+
+    // Cancel any existing speech synthesis to prevent overlap
+    synthRef.current.cancel();
 
     const utter = new window.SpeechSynthesisUtterance(text);
     utter.lang = lang;
@@ -97,11 +117,13 @@ const AudioPlaybackButton: React.FC<AudioPlaybackButtonProps> = ({
     }
     
     utter.onend = () => {
+      console.log("[AudioPlaybackButton] Audio playback ended");
       setLoading(false);
       setPlaying(false);
       onPlaybackEnd?.();
     };
     utter.onerror = () => {
+      console.log("[AudioPlaybackButton] Audio playback error");
       setLoading(false);
       setPlaying(false);
       onPlaybackEnd?.();
@@ -116,9 +138,12 @@ const AudioPlaybackButton: React.FC<AudioPlaybackButtonProps> = ({
     }
   }, [playing]);
 
+  // Cleanup on unmount
   useEffect(() => {
     return () => {
-      synthRef.current.cancel();
+      if (synthRef.current) {
+        synthRef.current.cancel();
+      }
     };
   }, []);
 
@@ -156,7 +181,11 @@ const AudioPlaybackButton: React.FC<AudioPlaybackButtonProps> = ({
           className="p-1 rounded hover:bg-accent focus:outline-none transition"
           disabled={disabled}
           aria-label={playing ? "Stop audio playback" : "Play transcript with text-to-speech"}
-          style={{ pointerEvents: disabled ? "none" : "auto" }}
+          style={{ 
+            pointerEvents: disabled ? "none" : "auto",
+            position: 'relative',
+            zIndex: 1
+          }}
           onMouseEnter={handleIconMouseEnter}
           onMouseLeave={handleIconMouseLeave}
         >

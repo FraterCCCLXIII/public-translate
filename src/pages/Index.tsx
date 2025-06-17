@@ -1,18 +1,23 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import TranscriptNav from "@/components/TranscriptNav";
 import NUX from "@/components/NUX";
 import TranscriptPanel from "@/components/TranscriptPanel";
 import { useVoiceRecognition } from "@/hooks/useVoiceRecognition";
 import { useTranslation } from "@/hooks/useTranslation";
+import { useAutoPlayOnSilence } from "@/hooks/useAutoPlayOnSilence";
 
 // Language metadata
 const LANGUAGES = [
   { value: "en", label: "English" },
   { value: "ja", label: "Japanese" },
+  { value: "es", label: "Spanish" },
   { value: "fr", label: "French" },
   { value: "de", label: "German" },
-  { value: "es", label: "Spanish" },
-  { value: "zh", label: "Chinese" }
+  { value: "it", label: "Italian" },
+  { value: "pt", label: "Portuguese" },
+  { value: "ru", label: "Russian" },
+  { value: "zh", label: "Chinese" },
+  { value: "ko", label: "Korean" },
 ];
 
 const Index = () => {
@@ -22,6 +27,7 @@ const Index = () => {
     result,
     start,
     stop,
+    clearTranscript,
     leftLang,
     rightLang,
     setLeftLang,
@@ -49,8 +55,140 @@ const Index = () => {
   const [rightAudioPlaying, setRightAudioPlaying] = useState(false);
 
   // Voice selection state for both panels
-  const [leftSelectedVoice, setLeftSelectedVoice] = useState<string>("");
-  const [rightSelectedVoice, setRightSelectedVoice] = useState<string>("");
+  const [leftSelectedVoice, setLeftSelectedVoice] = useState<string>(() => localStorage.getItem("leftSelectedVoice") || "");
+  const [rightSelectedVoice, setRightSelectedVoice] = useState<string>(() => localStorage.getItem("rightSelectedVoice") || "");
+
+  // Auto-speak settings
+  const [autoSpeak, setAutoSpeak] = useState<boolean>(() => localStorage.getItem("auto_speak") !== "false");
+  const [silenceTimeout, setSilenceTimeout] = useState<number>(() => parseInt(localStorage.getItem("silence_timeout") || "3000"));
+
+  // Handle mic muting during audio playback - use counter to track multiple audio sessions
+  const [activeAudioSessions, setActiveAudioSessions] = useState(0);
+  const [wasRecordingBeforeAnyAudio, setWasRecordingBeforeAnyAudio] = useState(false);
+  const [micButtonJustClicked, setMicButtonJustClicked] = useState(false);
+
+  // Use ref to track recording state more reliably
+  const recordingRef = useRef(recording);
+  recordingRef.current = recording;
+
+  // Debug logging for audio state
+  useEffect(() => {
+    console.log("[Index] Audio state changed:", { activeAudioSessions, wasRecordingBeforeAnyAudio, recording });
+  }, [activeAudioSessions, wasRecordingBeforeAnyAudio, recording]);
+
+  // Ensure audio playing states are reset when all sessions end
+  useEffect(() => {
+    if (activeAudioSessions === 0) {
+      console.log("[Index] All audio sessions ended, resetting audio playing states");
+      setLeftAudioPlaying(false);
+      setRightAudioPlaying(false);
+      setWasRecordingBeforeAnyAudio(false);
+    }
+  }, [activeAudioSessions]);
+
+  // Save voice selections to localStorage
+  useEffect(() => {
+    localStorage.setItem("leftSelectedVoice", leftSelectedVoice);
+  }, [leftSelectedVoice]);
+
+  useEffect(() => {
+    localStorage.setItem("rightSelectedVoice", rightSelectedVoice);
+  }, [rightSelectedVoice]);
+
+  const handleAudioStart = () => {
+    console.log("[Index] Audio playback started - mic should be muted", { recording, activeAudioSessions, wasRecordingBeforeAnyAudio, micButtonJustClicked });
+    
+    // Prevent audio if mic button was just clicked
+    if (micButtonJustClicked) {
+      console.log("[Index] Preventing auto-play - mic button was just clicked");
+      return;
+    }
+    
+    // If this is the first audio session, remember if we were recording
+    if (activeAudioSessions === 0) {
+      setWasRecordingBeforeAnyAudio(recording);
+    }
+    
+    // Increment active audio sessions
+    setActiveAudioSessions(prev => {
+      const newCount = prev + 1;
+      console.log("[Index] Active audio sessions incremented to:", newCount);
+      return newCount;
+    });
+    
+    // Stop recording when audio starts to prevent feedback
+    if (recording) {
+      console.log("[Index] Stopping recording due to audio playback");
+      stop();
+    }
+  };
+
+  const handleAudioEnd = () => {
+    console.log("[Index] Audio playback ended - mic can be unmuted", { recording, activeAudioSessions, wasRecordingBeforeAnyAudio });
+    
+    // Decrement active audio sessions
+    setActiveAudioSessions(prev => {
+      const newCount = Math.max(0, prev - 1); // Prevent negative counts
+      console.log("[Index] Active audio sessions reduced to:", newCount);
+      
+      // If no more active audio sessions, always restart recording
+      if (newCount === 0 && !recordingRef.current) {
+        console.log("[Index] Auto-restarting recording after translation playback ended");
+        // Add a small delay to ensure state is properly updated
+        setTimeout(() => {
+          console.log("[Index] Executing delayed start() call");
+          start();
+        }, 100);
+      } else if (newCount === 0) {
+        console.log("[Index] Not restarting recording - already recording", { recording: recordingRef.current });
+      }
+      
+      return newCount;
+    });
+  };
+
+  // Use auto-play hook for right panel (translation)
+  useAutoPlayOnSilence({
+    isRecording: recording,
+    transcript: result.transcript,
+    translation: result.translation,
+    canAutoPlay: autoSpeak && rightVisible && !leftAudioPlaying && !rightAudioPlaying && !micButtonJustClicked,
+    isAudioPlaying: rightAudioPlaying,
+    setAudioPlaying: setRightAudioPlaying,
+    lang: rightLang,
+    timeoutMs: silenceTimeout,
+    onAudioStart: handleAudioStart,
+    onAudioEnd: handleAudioEnd,
+    onTranscriptClear: clearTranscript,
+  });
+
+  // Spacebar handling for stopping audio playback
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.code === "Space" && (leftAudioPlaying || rightAudioPlaying)) {
+        event.preventDefault();
+        
+        // Stop all audio playback
+        if (window.speechSynthesis) {
+          window.speechSynthesis.cancel();
+        }
+        
+        setLeftAudioPlaying(false);
+        setRightAudioPlaying(false);
+        
+        // Reset all audio sessions and resume recording if needed
+        setActiveAudioSessions(0);
+        if (!recordingRef.current) {
+          console.log("[Index] Auto-restarting recording after spacebar stop");
+          start();
+        }
+        setWasRecordingBeforeAnyAudio(false);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [leftAudioPlaying, rightAudioPlaying, recording, start, wasRecordingBeforeAnyAudio]);
 
   // Debug: Check Web Speech API availability
   useEffect(() => {
@@ -70,6 +208,11 @@ const Index = () => {
       console.log("Voice recognition result updated:", result);
     }
   }, [result]);
+
+  // Debug: Monitor recording state changes
+  useEffect(() => {
+    console.log("[Index] Recording state changed:", { recording, activeAudioSessions, wasRecordingBeforeAnyAudio });
+  }, [recording, activeAudioSessions, wasRecordingBeforeAnyAudio]);
 
   // Test translation function
   const testTranslation = async () => {
@@ -103,10 +246,55 @@ const Index = () => {
 
   // Handle mic click - start/stop voice recognition
   const handleMicClick = () => {
-    console.log("Mic clicked, current recording state:", recording);
+    console.log("[Index] Mic clicked, current state:", { 
+      recording, 
+      leftAudioPlaying, 
+      rightAudioPlaying, 
+      activeAudioSessions, 
+      wasRecordingBeforeAnyAudio,
+      micButtonJustClicked
+    });
+    
+    // Set flag to prevent audio interference
+    setMicButtonJustClicked(true);
+    setTimeout(() => setMicButtonJustClicked(false), 2000); // Clear after 2 seconds
+    
+    // Always clear any audio states first to prevent interference
+    if (leftAudioPlaying || rightAudioPlaying || activeAudioSessions > 0) {
+      console.log("[Index] Clearing audio states before mic action");
+      setLeftAudioPlaying(false);
+      setRightAudioPlaying(false);
+      setActiveAudioSessions(0);
+      setWasRecordingBeforeAnyAudio(false);
+      if (window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+      }
+    }
+    
+    // Force cancel any ongoing speech synthesis
+    if (window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+    }
+    
+    // Clear any existing auto-play timers by temporarily disabling auto-play
+    // This will trigger the useAutoPlayOnSilence hook to clear its timers
+    const currentAutoSpeak = autoSpeak;
+    if (currentAutoSpeak) {
+      console.log("[Index] Temporarily disabling auto-play to clear timers");
+      // The auto-play hook will re-evaluate when canAutoPlay changes
+    }
+    
+    // Clear auto-play timers directly
+    if (typeof window !== 'undefined' && (window as any).clearAutoPlayTimers) {
+      console.log("[Index] Clearing auto-play timers");
+      (window as any).clearAutoPlayTimers();
+    }
+    
     if (recording) {
+      console.log("[Index] Stopping recording via mic click");
       stop();
     } else {
+      console.log("[Index] Starting recording via mic click");
       start();
     }
   };
@@ -149,7 +337,7 @@ const Index = () => {
         
         {/* Debug controls - only show in development */}
         {process.env.NODE_ENV === "development" && (
-          <div className="fixed top-4 right-4 z-50 bg-white dark:bg-gray-800 p-4 rounded-lg shadow-lg border">
+          <div className="fixed bottom-4 right-4 z-50 bg-white dark:bg-gray-800 p-4 rounded-lg shadow-lg border">
             <h3 className="text-sm font-bold mb-2">Debug Controls</h3>
             <button
               onClick={testTranslation}
@@ -163,6 +351,13 @@ const Index = () => {
               <div>Right Lang: {rightLang}</div>
               <div>Left Voice: {leftSelectedVoice || "Default"}</div>
               <div>Right Voice: {rightSelectedVoice || "Default"}</div>
+              <div>Auto-Speak: {autoSpeak ? "On" : "Off"}</div>
+              <div>Silence Timeout: {silenceTimeout / 1000}s</div>
+              <div>Left Audio: {leftAudioPlaying ? "Playing" : "Stopped"}</div>
+              <div>Right Audio: {rightAudioPlaying ? "Playing" : "Stopped"}</div>
+              <div>Active Audio Sessions: {activeAudioSessions}</div>
+              <div>Was Recording Before Audio: {wasRecordingBeforeAnyAudio ? "Yes" : "No"}</div>
+              <div>Mic Button Protection: {micButtonJustClicked ? "Active" : "Inactive"}</div>
             </div>
           </div>
         )}
@@ -189,9 +384,57 @@ const Index = () => {
                   playing: leftAudioPlaying,
                   setPlaying: setLeftAudioPlaying,
                   lang: leftLang,
-                  onPlaybackStart: () => console.log("Left panel audio started"),
-                  onPlaybackEnd: () => console.log("Left panel audio ended"),
-                  disabled: false, // Allow popover even without text
+                  onPlaybackStart: () => {
+                    console.log("[Index] Left panel audio started", { recording, activeAudioSessions, wasRecordingBeforeAnyAudio, micButtonJustClicked });
+                    
+                    // Prevent audio if mic button was just clicked
+                    if (micButtonJustClicked) {
+                      console.log("[Index] Preventing audio playback - mic button was just clicked");
+                      return;
+                    }
+                    
+                    // If this is the first audio session, remember if we were recording
+                    if (activeAudioSessions === 0) {
+                      setWasRecordingBeforeAnyAudio(recording);
+                    }
+                    
+                    // Increment active audio sessions
+                    setActiveAudioSessions(prev => {
+                      const newCount = prev + 1;
+                      console.log("[Index] Active audio sessions incremented to:", newCount);
+                      return newCount;
+                    });
+                    
+                    // Stop recording when audio starts to prevent feedback
+                    if (recording) {
+                      console.log("[Index] Stopping recording due to left panel audio");
+                      stop();
+                    }
+                  },
+                  onPlaybackEnd: () => {
+                    console.log("[Index] Left panel audio ended", { recording, activeAudioSessions, wasRecordingBeforeAnyAudio });
+                    
+                    // Decrement active audio sessions
+                    setActiveAudioSessions(prev => {
+                      const newCount = Math.max(0, prev - 1); // Prevent negative counts
+                      console.log("[Index] Active audio sessions reduced to:", newCount);
+                      
+                      // If no more active audio sessions, always restart recording
+                      if (newCount === 0 && !recordingRef.current) {
+                        console.log("[Index] Auto-restarting recording after left panel audio ended");
+                        // Add a small delay to ensure state is properly updated
+                        setTimeout(() => {
+                          console.log("[Index] Executing delayed start() call for left panel");
+                          start();
+                        }, 100);
+                      } else if (newCount === 0) {
+                        console.log("[Index] Not restarting recording after left panel audio - already recording", { recording: recordingRef.current });
+                      }
+                      
+                      return newCount;
+                    });
+                  },
+                  disabled: micButtonJustClicked || false, // Disable when mic button was just clicked
                   selectedVoice: leftSelectedVoice,
                   setSelectedVoice: setLeftSelectedVoice,
                 }}
@@ -218,9 +461,57 @@ const Index = () => {
                   playing: rightAudioPlaying,
                   setPlaying: setRightAudioPlaying,
                   lang: rightLang,
-                  onPlaybackStart: () => console.log("Right panel audio started"),
-                  onPlaybackEnd: () => console.log("Right panel audio ended"),
-                  disabled: false, // Allow popover even without text
+                  onPlaybackStart: () => {
+                    console.log("[Index] Right panel audio started", { recording, activeAudioSessions, wasRecordingBeforeAnyAudio, micButtonJustClicked });
+                    
+                    // Prevent audio if mic button was just clicked
+                    if (micButtonJustClicked) {
+                      console.log("[Index] Preventing audio playback - mic button was just clicked");
+                      return;
+                    }
+                    
+                    // If this is the first audio session, remember if we were recording
+                    if (activeAudioSessions === 0) {
+                      setWasRecordingBeforeAnyAudio(recording);
+                    }
+                    
+                    // Increment active audio sessions
+                    setActiveAudioSessions(prev => {
+                      const newCount = prev + 1;
+                      console.log("[Index] Active audio sessions incremented to:", newCount);
+                      return newCount;
+                    });
+                    
+                    // Stop recording when audio starts to prevent feedback
+                    if (recording) {
+                      console.log("[Index] Stopping recording due to right panel audio");
+                      stop();
+                    }
+                  },
+                  onPlaybackEnd: () => {
+                    console.log("[Index] Right panel audio ended", { recording, activeAudioSessions, wasRecordingBeforeAnyAudio });
+                    
+                    // Decrement active audio sessions
+                    setActiveAudioSessions(prev => {
+                      const newCount = Math.max(0, prev - 1); // Prevent negative counts
+                      console.log("[Index] Active audio sessions reduced to:", newCount);
+                      
+                      // If no more active audio sessions, always restart recording
+                      if (newCount === 0 && !recordingRef.current) {
+                        console.log("[Index] Auto-restarting recording after right panel audio ended");
+                        // Add a small delay to ensure state is properly updated
+                        setTimeout(() => {
+                          console.log("[Index] Executing delayed start() call for right panel");
+                          start();
+                        }, 100);
+                      } else if (newCount === 0) {
+                        console.log("[Index] Not restarting recording after right panel audio - already recording", { recording: recordingRef.current });
+                      }
+                      
+                      return newCount;
+                    });
+                  },
+                  disabled: micButtonJustClicked || false, // Disable when mic button was just clicked
                   selectedVoice: rightSelectedVoice,
                   setSelectedVoice: setRightSelectedVoice,
                 }}

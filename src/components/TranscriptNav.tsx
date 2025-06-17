@@ -187,6 +187,8 @@ const TranscriptNavInner: React.FC<TranscriptNavProps> = ({
   // Settings modal (popover)
   const [llmProvider, setLlmProvider] = useState<string>(() => localStorage.getItem("llm_provider") || "openai");
   const [translationProvider, setTranslationProvider] = useState<string>(() => localStorage.getItem("translation_provider") || "auto");
+  const [autoSpeak, setAutoSpeak] = useState<boolean>(() => localStorage.getItem("auto_speak") !== "false"); // default true
+  const [silenceTimeout, setSilenceTimeout] = useState<number>(() => parseInt(localStorage.getItem("silence_timeout") || "3000")); // default 3 seconds
   const [openaiKey, setOpenaiKey] = useState<string>(() => localStorage.getItem("openai_api_key") || "");
   const [claudeKey, setClaudeKey] = useState<string>(() => localStorage.getItem("claude_api_key") || "");
   const [deepseekKey, setDeepseekKey] = useState<string>(() => localStorage.getItem("deepseek_api_key") || "");
@@ -207,6 +209,8 @@ const TranscriptNavInner: React.FC<TranscriptNavProps> = ({
     localStorage.setItem("openai_api_key", openaiKey);
     localStorage.setItem("llm_provider", llmProvider);
     localStorage.setItem("translation_provider", translationProvider);
+    localStorage.setItem("auto_speak", autoSpeak.toString());
+    localStorage.setItem("silence_timeout", silenceTimeout.toString());
     localStorage.setItem("claude_api_key", claudeKey);
     localStorage.setItem("deepseek_api_key", deepseekKey);
     localStorage.setItem("local_llm_url", localLlmUrl);
@@ -536,6 +540,37 @@ const TranscriptNavInner: React.FC<TranscriptNavProps> = ({
                   {translationProvider === "libretranslate" && "Open source translation service"}
                   {translationProvider === "openai" && "Requires OpenAI API key for best quality"}
                 </div>
+              </div>
+              {/* Auto-Speak Settings */}
+              <div>
+                <label className="font-bold text-xs text-gray-700">Auto-Speak Settings</label>
+                <div className="flex items-center gap-2 mt-1">
+                  <input
+                    type="checkbox"
+                    id="autoSpeak"
+                    checked={autoSpeak}
+                    onChange={e => setAutoSpeak(e.target.checked)}
+                    className="rounded"
+                  />
+                  <label htmlFor="autoSpeak" className="text-xs">Auto-speak translation after silence</label>
+                </div>
+                {autoSpeak && (
+                  <div className="mt-2">
+                    <label className="text-xs text-gray-600">Silence timeout (seconds):</label>
+                    <input
+                      type="range"
+                      min="1"
+                      max="10"
+                      step="0.5"
+                      value={silenceTimeout / 1000}
+                      onChange={e => setSilenceTimeout(parseFloat(e.target.value) * 1000)}
+                      className="w-full mt-1"
+                    />
+                    <div className="text-xs text-gray-500 mt-1">
+                      {silenceTimeout / 1000} seconds of silence before auto-speak
+                    </div>
+                  </div>
+                )}
               </div>
               {/* TTS Provider and voice dropdown */}
               <div>
