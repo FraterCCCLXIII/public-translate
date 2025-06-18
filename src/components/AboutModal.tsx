@@ -56,9 +56,6 @@ const AboutModal: React.FC<AboutModalProps> = ({ open, onOpenChange }) => (
             >
               <Github size={16} /> Source on GitHub
             </a>
-            <span>
-              | <a href="https://docs.lovable.dev/tips-tricks/troubleshooting" className="underline" target="_blank" rel="noopener">Help docs</a>
-            </span>
           </div>
         </div>
       </DialogDescription>
