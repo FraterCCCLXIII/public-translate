@@ -1,10 +1,10 @@
-
 import React, { useState, useEffect } from "react";
 import { Button } from "./ui/button";
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "./ui/select";
+import { useI18n } from "@/hooks/useUITitleTranslation";
+import { Github } from "lucide-react";
 
 const APP_NAME = "Public:Translate";
-const APP_EXPLANATION = "Public:Translate turns speech into side-by-side bilingual transcripts in real time. Set it up in seconds, and start transcribing or translating instantly.";
 
 const UI_LANGUAGES = [
   { value: "en", label: "English" },
@@ -15,40 +15,23 @@ const UI_LANGUAGES = [
   { value: "zh", label: "中文" }
 ];
 
-const steps = [
-  {
-    title: "Welcome!",
-    content: "Let's set up your experience.",
-    explanation: APP_EXPLANATION,
-    showAppName: true,
-  },
-  {
-    title: "Choose UI Language",
-    content: "Language auto-detected, but you can pick another.",
-    component: "lang",
-  },
-  {
-    title: "Ready to Go!",
-    content: "All defaults are set. You can switch these later in Settings.",
-    component: "summary",
-  },
-];
-
-const fadeClass = "transition-opacity duration-500 ease-in-out";
-
 interface NUXProps {
   onFinish: () => void;
   recording?: boolean;
   onMicClick?: () => void;
 }
 
-const NUX: React.FC<NUXProps> = ({ onFinish, recording }) => {
+const NUXInner: React.FC<NUXProps> = ({ onFinish, recording }) => {
   // Detect and set initial language
   const browserLang = navigator.language?.slice(0, 2) || "en";
   const initialLang = UI_LANGUAGES.find(l => l.value === browserLang) ? browserLang : "en";
-  const [stepIdx, setStepIdx] = useState(0);
   const [lang, setLang] = useState(initialLang);
-  const [fade, setFade] = useState(true);
+  const { t, setLocale } = useI18n();
+
+  // Update I18nProvider locale when NUX language changes
+  useEffect(() => {
+    setLocale(lang as any);
+  }, [lang, setLocale]);
 
   // If recording is activated, finish NUX immediately
   useEffect(() => {
@@ -60,77 +43,92 @@ const NUX: React.FC<NUXProps> = ({ onFinish, recording }) => {
     // eslint-disable-next-line
   }, [recording]);
 
-  useEffect(() => {
-    setFade(true);
-  }, [stepIdx]);
-
-  // Next button logic
-  const handleNext = () => {
-    setFade(false);
-    setTimeout(() => {
-      if (stepIdx === steps.length - 1) {
-        localStorage.setItem("ui_language", lang);
-        onFinish();
-      } else {
-        setStepIdx(stepIdx + 1);
-      }
-      setFade(true);
-    }, 400);
-  };
-
   // Set language on change
   useEffect(() => {
     localStorage.setItem("ui_language", lang);
   }, [lang]);
 
-  const step = steps[stepIdx];
+  const handleStart = () => {
+    localStorage.setItem("ui_language", lang);
+    localStorage.setItem("nux_complete", "1");
+    onFinish();
+  };
 
   return (
-    <div className={`fixed inset-0 z-[2000] flex flex-col items-center justify-center bg-white dark:bg-black ${fadeClass} ${fade ? "opacity-100" : "opacity-0"}`}>
-      <div className="w-full max-w-md flex flex-col items-center px-6 py-10 text-center">
-        {step.showAppName && (
-          <>
-            <h1 className="font-black text-4xl mb-2 tracking-tight">{APP_NAME}</h1>
-            <p className="text-base text-neutral-500 dark:text-neutral-300 mb-6 font-medium">{step.explanation}</p>
-          </>
-        )}
-        <div className="mb-8">
-          <div className="font-bold text-2xl mb-4">{step.title}</div>
-          <p className="text-gray-600 dark:text-gray-400 mb-6">{step.content}</p>
-          {step.component === "lang" && (
+    <div className="fixed inset-0 z-[2000] flex flex-col items-center justify-center bg-white dark:bg-black">
+      <div className="w-full max-w-2xl flex flex-col items-center px-8 py-12 text-center">
+        {/* App Logo with reduced weight */}
+        <h1 className="font-bold text-3xl mb-4 tracking-tight text-neutral-800 dark:text-neutral-200">
+          {APP_NAME}
+        </h1>
+        
+        {/* App Explanation */}
+        <p className="text-base text-neutral-600 dark:text-neutral-400 mb-8 font-medium max-w-lg">
+          {t("app_explanation")}
+        </p>
+
+        {/* Main Content Card */}
+        <div className="w-full max-w-md bg-neutral-50 dark:bg-neutral-900 rounded-lg p-6 mb-8">
+          {/* UI Language Selection */}
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+              {t("ui_language_label")}
+            </label>
             <Select value={lang} onValueChange={value => setLang(value)}>
-              <SelectTrigger className="w-48 mx-auto">
+              <SelectTrigger className="w-full">
                 <SelectValue aria-label="UI Language">
                   {UI_LANGUAGES.find(l => l.value === lang)?.label}
                 </SelectValue>
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="z-[3000]">
                 {UI_LANGUAGES.map(o => (
                   <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
-          )}
+            <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-2">
+              {t("ui_language_help")}
+            </p>
+          </div>
         </div>
 
-        {/* Step dots */}
-        <div className="flex items-center gap-2 mb-6">
-          {steps.map((_, idx) => (
-            <span
-              key={idx}
-              className={`inline-block w-2 h-2 rounded-full transition-all duration-300 ${idx === stepIdx ? "bg-neutral-800 dark:bg-neutral-100 w-4" : "bg-neutral-300 dark:bg-neutral-800 opacity-60 w-2"}`}
-              aria-label={idx === stepIdx ? "Current step" : "Step"}
-            />
-          ))}
-        </div>
-
-        <Button className="mt-4 w-36 mx-auto text-base py-2" onClick={handleNext}>
-          {stepIdx === steps.length - 1 ? "Start Using" : "Next"}
+        {/* Start Button */}
+        <Button 
+          className="w-48 text-base py-3 font-medium" 
+          onClick={handleStart}
+        >
+          {t("start_button")}
         </Button>
+
+        {/* Footer with MIT License and GitHub */}
+        <div className="mt-12 flex items-center gap-4 text-sm text-neutral-500 dark:text-neutral-400">
+          <a 
+            href="https://github.com/FraterCCCLXIII/public-translate/" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors"
+          >
+            <Github size={16} />
+            <span>GitHub</span>
+          </a>
+          <span>•</span>
+          <a 
+            href="https://opensource.org/licenses/MIT" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors"
+          >
+            MIT License
+          </a>
+          <span className="text-xs text-gray-400 ml-2">ALPHA VERSION 1</span>
+        </div>
       </div>
     </div>
   );
 };
+
+// Use global I18nProvider instead
+const NUX: React.FC<NUXProps> = NUXInner;
 
 export default NUX;
 

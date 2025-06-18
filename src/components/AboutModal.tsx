@@ -1,4 +1,3 @@
-
 import React from "react";
 import {
   Dialog,
@@ -49,7 +48,7 @@ const AboutModal: React.FC<AboutModalProps> = ({ open, onOpenChange }) => (
           </ul>
           <div className="mt-4 text-xs text-gray-600 dark:text-gray-400 border-t pt-2 flex items-center gap-2">
             <a
-              href="https://github.com/your-repo-url"
+              href="https://github.com/FraterCCCLXIII/public-translate/"
               className="flex items-center gap-1 underline text-blue-700 dark:text-blue-400"
               target="_blank"
               rel="noopener noreferrer"

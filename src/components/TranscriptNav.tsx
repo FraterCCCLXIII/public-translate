@@ -530,6 +530,12 @@ const TranscriptNavInner: React.FC<TranscriptNavProps> = ({
     );
   };
 
+  const handleDownloadLocal = () => {
+    const content = `--- ${LANGUAGES.find(l => l.value === leftLang)?.label || leftLang} ---\n${transcript}\n\n--- ${LANGUAGES.find(l => l.value === rightLang)?.label || rightLang} ---\n${translation}\n`;
+    const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+    saveAs(blob, "transcript.txt");
+  };
+
   return (
     <>
       {/* About Modal */}
@@ -557,7 +563,7 @@ const TranscriptNavInner: React.FC<TranscriptNavProps> = ({
                   </div>
                 </div>
               </div>
-              <Button onClick={handleDownload || (() => {})} className="w-full mt-2" variant="default">Download</Button>
+              <Button onClick={handleDownloadLocal} className="w-full mt-2" variant="default">Download</Button>
             </div>
           </div>
         </Dialog>
@@ -869,9 +875,28 @@ const TranscriptNavInner: React.FC<TranscriptNavProps> = ({
                   onChange={e => setLocale(e.target.value as any)}
                 >
                   <option value="en">English</option>
+                  <option value="ja">日本語</option>
                   <option value="fr">Français</option>
+                  <option value="de">Deutsch</option>
+                  <option value="es">Español</option>
+                  <option value="zh">中文</option>
                 </select>
                 <span className="text-xs text-gray-400">{t("ui_language_help")}</span>
+              </div>
+              
+              {/* Dark Mode Toggle */}
+              <div>
+                <label className="font-bold text-xs text-gray-700">{t("toggle_dark_mode")}</label>
+                <div className="flex items-center gap-2 mt-1">
+                  <input
+                    type="checkbox"
+                    id="darkMode"
+                    checked={darkMode}
+                    onChange={e => setDarkMode(e.target.checked)}
+                    className="rounded"
+                  />
+                  <label htmlFor="darkMode" className="text-xs">{t("theme_toggle_help")}</label>
+                </div>
               </div>
               
               {/* Debug Window Toggle */}
@@ -944,11 +969,4 @@ const TranscriptNavInner: React.FC<TranscriptNavProps> = ({
   );
 };
 
-// Wrap the whole nav in the I18nProvider so UI language is reactive:
-const TranscriptNav: React.FC<TranscriptNavProps> = (props) => (
-  <I18nProvider>
-    <TranscriptNavInner {...props} />
-  </I18nProvider>
-);
-
-export default TranscriptNav;
+export default TranscriptNavInner;

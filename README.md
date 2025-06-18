@@ -42,7 +42,7 @@ public-translate/
 
 1. **Clone the repository:**
    ```sh
-   git clone https://github.com/your-username/public-translate.git
+   git clone https://github.com/FraterCCCLXIII/public-translate.git
    cd public-translate
    ```
 2. **Install dependencies:**

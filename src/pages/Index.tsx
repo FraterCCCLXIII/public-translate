@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import TranscriptNav from "@/components/TranscriptNav";
+import TranscriptNavInner from "@/components/TranscriptNav";
 import NUX from "@/components/NUX";
 import TranscriptPanel from "@/components/TranscriptPanel";
 import { useVoiceRecognition } from "@/hooks/useVoiceRecognition";
@@ -237,6 +237,8 @@ const getLanguageScript = (langCode: string): string => {
   };
   return scriptMap[langCode] || 'latin'; // Default to latin
 };
+
+const TranscriptNav = TranscriptNavInner;
 
 const Index = () => {
   // Use the actual voice recognition hook
